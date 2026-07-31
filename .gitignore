@@ -1,0 +1,38 @@
+# Gradle & Build Artifacts
+.gradle/
+build/
+*/build/
+out/
+*/out/
+bin/
+*.jar
+*.war
+*.ear
+
+# Frontend Artifacts & Dependencies
+easy-deploy-frontend/node_modules/
+easy-deploy-frontend/dist/
+node_modules/
+dist/
+
+# IDE & Editor Files (IntelliJ IDEA, VS Code, Eclipse)
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+
+# Operating System & Temp Files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# Generated DevOps Config Outputs (Local testing)
+Dockerfile
+docker-compose.yml
+nginx.conf
+README-DEPLOY.md

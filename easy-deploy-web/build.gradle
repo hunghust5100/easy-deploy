@@ -1,0 +1,16 @@
+plugins {
+    id 'org.springframework.boot' version '3.4.0'
+}
+
+springBoot {
+    mainClass = 'com.easydeploy.web.EasyDeployWebApplication'
+}
+
+dependencies {
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.4.0')
+    implementation project(':easy-deploy-core')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
