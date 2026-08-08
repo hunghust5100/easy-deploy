@@ -1,0 +1,64 @@
+/* ============================================
+   Easy Deploy — Typography
+   ============================================ */
+
+/* Google Fonts — Inter (UI) + JetBrains Mono (Code) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+h1, h2, h3, h4 {
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+}
+
+h2 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+}
+
+h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+h4 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+small {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+a {
+  color: var(--color-text-link);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+a:hover {
+  color: var(--color-accent-hover);
+}

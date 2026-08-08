@@ -1,0 +1,138 @@
+/* ============================================
+   Deploy Log Viewer (XTerm Real-time Output)
+   ============================================ */
+
+.deploy-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+/* Launch CTA Area */
+.deploy-viewer__launch-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.deploy-viewer__launch-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(46, 160, 67, 0.25);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.deploy-viewer__launch-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(46, 160, 67, 0.35);
+  filter: brightness(1.05);
+}
+
+.deploy-viewer__launch-btn:disabled {
+  background: var(--color-border-default);
+  color: var(--color-text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.deploy-viewer__hint {
+  font-size: var(--text-xs);
+  color: var(--color-warning, #d29922);
+}
+
+/* Badge Status */
+.deploy-viewer__badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+}
+
+.deploy-viewer__badge--running {
+  background: rgba(56, 139, 253, 0.15);
+  border: 1px solid rgba(56, 139, 253, 0.3);
+  color: #58a6ff;
+}
+
+.deploy-viewer__badge--success {
+  background: rgba(46, 160, 67, 0.15);
+  border: 1px solid rgba(46, 160, 67, 0.3);
+  color: #3fb950;
+}
+
+.deploy-viewer__badge--error {
+  background: rgba(248, 81, 73, 0.15);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #f85149;
+}
+
+/* macOS Terminal Window Container */
+.deploy-viewer__terminal-window {
+  background: #0d1117;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.deploy-viewer__mac-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #161b22;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid #21262d;
+}
+
+.deploy-viewer__mac-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot--red { background: #ff5f56; }
+.dot--yellow { background: #ffbd2e; }
+.dot--green { background: #27c93f; }
+
+.deploy-viewer__mac-title {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: #8b949e;
+}
+
+.deploy-viewer__terminal-wrap {
+  height: 300px;
+  padding: var(--space-3);
+  background: #0d1117;
+}
+
+.deploy-viewer__terminal {
+  width: 100%;
+  height: 100%;
+}
+

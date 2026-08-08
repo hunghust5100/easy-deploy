@@ -1,0 +1,57 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - ${gitBranch!"main"}
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Lấy source code từ GitHub về runner
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # 2. Chuẩn bị môi trường build Docker nâng cao
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Đăng nhập Docker Hub (sử dụng GitHub Secrets)
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: <#noparse>${{ secrets.DOCKERHUB_USERNAME }}</#noparse>
+          password: <#noparse>${{ secrets.DOCKERHUB_TOKEN }}</#noparse>
+
+      # 4. Build Docker image và push lên Docker Hub
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: <#noparse>${{ secrets.DOCKERHUB_USERNAME }}</#noparse>/${(appName)!"my-app"}:latest
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      # 5. SSH vào VPS và ra lệnh cập nhật container
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: <#noparse>${{ secrets.SERVER_HOST }}</#noparse>
+          username: <#noparse>${{ secrets.SERVER_USER }}</#noparse>
+          password: <#noparse>${{ secrets.SERVER_PASSWORD }}</#noparse>
+          script: |
+            # Di chuyển vào thư mục chứa dự án trên VPS
+            cd ${(deployPath)!"/root/" + ((appName)!"my-app")}
+            
+            # Tải image mới nhất vừa build từ Docker Hub về VPS
+            docker compose pull
+            
+            # Khởi động lại hệ thống với image mới
+            docker compose up -d

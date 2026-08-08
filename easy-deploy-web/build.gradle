@@ -6,11 +6,19 @@ springBoot {
     mainClass = 'com.easydeploy.web.EasyDeployWebApplication'
 }
 
+bootRun {
+    jvmArgs('--enable-native-access=ALL-UNNAMED')
+}
+
 dependencies {
     implementation platform('org.springframework.boot:spring-boot-dependencies:3.4.0')
     implementation project(':easy-deploy-core')
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Modern JSch library supporting Java 17/21/25 and modern SSH keys
+    implementation 'com.github.mwiede:jsch:0.2.23'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

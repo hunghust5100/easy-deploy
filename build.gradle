@@ -10,8 +10,12 @@ allprojects {
 subprojects {
     apply plugin: 'java'
 
-    tasks.withType(JavaCompile) {
+    tasks.withType(JavaCompile).configureEach {
         options.release = 21
+    }
+
+    tasks.withType(JavaExec).configureEach {
+        jvmArgs('--enable-native-access=ALL-UNNAMED')
     }
 
     dependencies {
@@ -22,5 +26,6 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        jvmArgs('--enable-native-access=ALL-UNNAMED')
     }
 }
