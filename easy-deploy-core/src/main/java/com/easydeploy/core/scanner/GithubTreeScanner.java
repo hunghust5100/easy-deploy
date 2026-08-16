@@ -28,8 +28,29 @@ public class GithubTreeScanner {
         String owner = ownerAndRepo[0];
         String repo = ownerAndRepo[1];
 
-        // Default to main branch, fallback to master if needed
-        String apiUrl = String.format("https://api.github.com/repos/%s/%s/git/trees/main?recursive=1", owner, repo);
+        // 1. Try to get repo info to find default branch
+        String defaultBranch = "main";
+        try {
+            String repoInfoUrl = String.format("https://api.github.com/repos/%s/%s", owner, repo);
+            HttpRequest infoRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(repoInfoUrl))
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .header("User-Agent", "Easy-Deploy-CLI")
+                    .GET()
+                    .build();
+            HttpResponse<String> infoResponse = httpClient.send(infoRequest, HttpResponse.BodyHandlers.ofString());
+            if (infoResponse.statusCode() == 200) {
+                JsonNode infoNode = objectMapper.readTree(infoResponse.body());
+                if (infoNode.has("default_branch") && !infoNode.get("default_branch").isNull()) {
+                    defaultBranch = infoNode.get("default_branch").asText();
+                }
+            }
+        } catch (Exception ignored) {
+            // fallback to defaultBranch = "main"
+        }
+
+        // 2. Fetch git tree with recursive=1
+        String apiUrl = String.format("https://api.github.com/repos/%s/%s/git/trees/%s?recursive=1", owner, repo, defaultBranch);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl))
@@ -40,15 +61,20 @@ public class GithubTreeScanner {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() == 404) {
-            // Try master branch
+        if (response.statusCode() == 404 && !defaultBranch.equals("master")) {
+            // Try master branch as fallback
             apiUrl = String.format("https://api.github.com/repos/%s/%s/git/trees/master?recursive=1", owner, repo);
             request = HttpRequest.newBuilder().uri(URI.create(apiUrl)).header("Accept", "application/vnd.github.v3+json").header("User-Agent", "Easy-Deploy-CLI").GET().build();
             response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         }
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("GitHub API request failed with HTTP " + response.statusCode() + ": " + response.body());
+            if (response.statusCode() == 404) {
+                throw new RuntimeException("Không tìm thấy repository '" + owner + "/" + repo + "' hoặc repo là Private (yêu cầu Public).");
+            } else if (response.statusCode() == 403) {
+                throw new RuntimeException("GitHub API bị giới hạn lượt gọi (Rate Limited). Vui lòng thử lại sau giây lát.");
+            }
+            throw new RuntimeException("GitHub API trả về mã lỗi HTTP " + response.statusCode());
         }
 
         JsonNode rootNode = objectMapper.readTree(response.body());
@@ -66,14 +92,14 @@ public class GithubTreeScanner {
         return filePaths;
     }
 
-    private String[] parseGithubUrl(String url) {
+    public String[] parseGithubUrl(String url) {
         String cleanUrl = url.trim().replace("https://github.com/", "").replace("http://github.com/", "");
         if (cleanUrl.endsWith(".git")) {
             cleanUrl = cleanUrl.substring(0, cleanUrl.length() - 4);
         }
         String[] parts = cleanUrl.split("/");
         if (parts.length < 2) {
-            throw new IllegalArgumentException("Invalid GitHub repository URL: " + url);
+            throw new IllegalArgumentException("Định dạng GitHub repository URL không hợp lệ: " + url);
         }
         return new String[]{parts[0], parts[1]};
     }

@@ -14,6 +14,7 @@ import {
   Check,
   Send,
   Server,
+  Sparkles,
 } from 'lucide-react';
 import { useVps } from '../../context/VpsContext';
 import '@xterm/xterm/css/xterm.css';
@@ -110,9 +111,9 @@ function WebTerminal() {
         fontSize: 14,
         fontFamily: "'JetBrains Mono', monospace",
         theme: {
-          background: '#0d1117',
-          foreground: '#c9d1d9',
-          cursor: '#58a6ff',
+          background: '#090d16',
+          foreground: '#e2e8f0',
+          cursor: '#38bdf8',
         },
       });
 
@@ -186,11 +187,9 @@ function WebTerminal() {
 
   const handleRunSnippet = (snip) => {
     if (connected && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      // Gửi câu lệnh tới SSH terminal
       wsRef.current.send(snip.command + '\r');
       termInstanceRef.current?.focus();
     } else {
-      // Sao chép câu lệnh vào clipboard nếu chưa kết nối
       navigator.clipboard.writeText(snip.command);
       setCopiedSnippetId(snip.id);
       setTimeout(() => setCopiedSnippetId(null), 2000);
@@ -220,12 +219,17 @@ function WebTerminal() {
 
   return (
     <div className="web-terminal">
-      {/* ── Quản lý Nhiều VPS & Form SSH ── */}
-      <div className="wt-form">
+      {/* ── Quản lý Nhiều VPS & Form SSH Card ── */}
+      <div className="wt-form-card">
         <div className="wt-form__header">
-          <div className="wt-form__title">
-            <TermIcon size={16} />
-            <span>Web SSH Terminal — Quản lý Đa Máy chủ</span>
+          <div className="wt-form__title-group">
+            <div className="wt-form__icon-wrap">
+              <TermIcon size={16} />
+            </div>
+            <div>
+              <h3 className="wt-form__title">Web SSH Terminal — Quản trị VPS</h3>
+              <p className="wt-form__subtitle">Kết nối shell tương tác trực tiếp trên trình duyệt tới bất kỳ máy chủ VPS nào.</p>
+            </div>
           </div>
 
           <div className="wt-vps-picker">
@@ -236,7 +240,7 @@ function WebTerminal() {
               onChange={handleSelectVps}
               disabled={connected || connecting}
             >
-              <option value="">-- Chọn máy chủ từ danh sách ({vpsList.length} VPS) --</option>
+              <option value="">⚡ Chọn máy chủ đã lưu ({vpsList.length} VPS)</option>
               {vpsList.map((vps) => (
                 <option key={vps.id} value={vps.id}>
                   🖥️ {vps.name} ({vps.username}@{vps.host}:{vps.port})
@@ -251,7 +255,7 @@ function WebTerminal() {
               onClick={handleSaveCurrentVps}
               disabled={connected || connecting}
             >
-              <BookmarkPlus size={14} /> Lưu VPS
+              <BookmarkPlus size={13} /> Lưu VPS
             </button>
 
             {selectedVpsId && (
@@ -262,45 +266,53 @@ function WebTerminal() {
                 onClick={handleDeleteCurrentVps}
                 disabled={connected || connecting}
               >
-                <Trash2 size={14} />
+                <Trash2 size={13} />
               </button>
             )}
           </div>
         </div>
 
         <div className="wt-form__grid">
-          <input
-            type="text"
-            name="host"
-            placeholder="Host / IP (e.g. 103.179.x.x)"
-            value={form.host}
-            onChange={handleChange}
-            disabled={connected || connecting}
-          />
-          <input
-            type="number"
-            name="port"
-            placeholder="Port"
-            value={form.port}
-            onChange={handleChange}
-            disabled={connected || connecting}
-          />
-          <input
-            type="text"
-            name="username"
-            placeholder="Username (e.g. root)"
-            value={form.username}
-            onChange={handleChange}
-            disabled={connected || connecting}
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            disabled={connected || connecting}
-          />
+          <div className="wt-input-wrap">
+            <input
+              type="text"
+              name="host"
+              placeholder="Host / IP (e.g. 103.179.x.x)"
+              value={form.host}
+              onChange={handleChange}
+              disabled={connected || connecting}
+            />
+          </div>
+          <div className="wt-input-wrap wt-input-wrap--sm">
+            <input
+              type="number"
+              name="port"
+              placeholder="Port (22)"
+              value={form.port}
+              onChange={handleChange}
+              disabled={connected || connecting}
+            />
+          </div>
+          <div className="wt-input-wrap">
+            <input
+              type="text"
+              name="username"
+              placeholder="Username (root)"
+              value={form.username}
+              onChange={handleChange}
+              disabled={connected || connecting}
+            />
+          </div>
+          <div className="wt-input-wrap">
+            <input
+              type="password"
+              name="password"
+              placeholder="Mật khẩu SSH"
+              value={form.password}
+              onChange={handleChange}
+              disabled={connected || connecting}
+            />
+          </div>
 
           {!connected ? (
             <button
@@ -309,8 +321,8 @@ function WebTerminal() {
               onClick={handleConnect}
               disabled={connecting || !form.host || !form.username}
             >
-              {connecting ? <Loader2 size={14} className="spin" /> : <Play size={14} />}
-              <span>{connecting ? 'Đang nối...' : 'Kết nối'}</span>
+              {connecting ? <Loader2 size={15} className="spin" /> : <Play size={15} />}
+              <span>{connecting ? 'Đang kết nối...' : 'Mở Terminal'}</span>
             </button>
           ) : (
             <button
@@ -318,18 +330,18 @@ function WebTerminal() {
               className="wt-btn wt-btn--disconnect"
               onClick={handleDisconnect}
             >
-              <Square size={14} />
+              <Square size={15} />
               <span>Ngắt kết nối</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* ── Snippets Toolbar (Bảng Thư viện Câu lệnh hay dùng) ── */}
-      <div className="wt-snippets-panel">
+      {/* ── Snippets Toolbar ── */}
+      <div className="wt-snippets-card">
         <div className="wt-snippets__header">
           <div className="wt-snippets__title">
-            <Code size={15} />
+            <Code size={15} className="text-accent" />
             <span>Thư viện Snippet Câu lệnh Thường dùng ({snippets.length})</span>
           </div>
 
@@ -348,7 +360,7 @@ function WebTerminal() {
               key={snip.id}
               className="wt-snippet-chip"
               onClick={() => handleRunSnippet(snip)}
-              title={connected ? `Thực thi: ${snip.command}` : `Sao chép: ${snip.command}`}
+              title={connected ? `Nhấn để chạy: ${snip.command}` : `Nhấn để sao chép: ${snip.command}`}
             >
               <span className="wt-snippet-cat">{snip.category}</span>
               <span className="wt-snippet-name">{snip.title}</span>
@@ -359,7 +371,7 @@ function WebTerminal() {
                   <Send size={12} className="wt-snippet-icon wt-snippet-icon--send" />
                 ) : (
                   copiedSnippetId === snip.id ? (
-                    <Check size={12} className="wt-snippet-icon wt-snippet-icon--check" />
+                    <Check size={12} className="wt-snippet-icon text-success" />
                   ) : (
                     <Copy size={12} className="wt-snippet-icon" />
                   )
@@ -394,7 +406,7 @@ function WebTerminal() {
                 <label>Tên / Tiêu đề gợi nhớ</label>
                 <input
                   type="text"
-                  placeholder="e.g. Kiểm tra RAM & Disk"
+                  placeholder="e.g. Kiểm tra RAM & Dung lượng Disk"
                   value={newSnippetTitle}
                   onChange={(e) => setNewSnippetTitle(e.target.value)}
                   required
@@ -439,9 +451,21 @@ function WebTerminal() {
         </div>
       )}
 
-      {/* ── XTerm Container ── */}
-      <div className="wt-container">
-        <div ref={terminalRef} className="wt-xterm" />
+      {/* ── macOS Style XTerm Container ── */}
+      <div className="wt-terminal-window">
+        <div className="wt-mac-header">
+          <div className="wt-mac-dots">
+            <span className="dot dot--red" />
+            <span className="dot dot--yellow" />
+            <span className="dot dot--green" />
+          </div>
+          <div className="wt-mac-title">
+            <span>Web SSH Terminal — {connected ? `${form.username}@${form.host}` : 'Chưa kết nối'}</span>
+          </div>
+        </div>
+        <div className="wt-container">
+          <div ref={terminalRef} className="wt-xterm" />
+        </div>
       </div>
     </div>
   );

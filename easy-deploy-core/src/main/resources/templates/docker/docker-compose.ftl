@@ -1,10 +1,13 @@
-version: '3.8'
 
 services:
   app:
+<#if (config.deployMode?? && config.deployMode == "registry_pull") || (config.useDockerHub?? && config.useDockerHub && config.dockerHubUsername?? && config.dockerHubUsername != "")>
+    image: ${config.dockerHubUsername}/${config.appName}:${(config.dockerImageTag?? && config.dockerImageTag != "")?then(config.dockerImageTag, "latest")}
+<#else>
     build:
       context: .
       dockerfile: Dockerfile
+</#if>
     container_name: ${config.appName}_app
     restart: always
 <#if config.dbType != "NONE">
@@ -38,6 +41,10 @@ services:
       - ${key}=${config.envVars[key]}
 </#list>
 </#if>
+</#if>
+<#if !config.enableNginx || config.hostPort != 80>
+    ports:
+      - "${config.hostPort?c}:${config.appPort?c}"
 </#if>
     networks:
       - app-network

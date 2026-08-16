@@ -1,25 +1,26 @@
 /* ============================================
-   Web SSH Terminal
+   Web Terminal — Modern Light SaaS Styles
    ============================================ */
 
 .web-terminal {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
+  gap: var(--space-5);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-/* ── Form ── */
-.wt-form {
+/* ── Form Card ── */
+.wt-form-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--color-border-default);
+  gap: var(--space-4);
 }
 
 .wt-form__header {
@@ -27,23 +28,45 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid #f1f5f9;
   flex-wrap: wrap;
 }
 
-.wt-form__title {
+.wt-form__title-group {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+}
+
+.wt-form__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: #eef2ff;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.wt-form__title {
   font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
+}
+
+.wt-form__subtitle {
+  font-size: var(--text-2xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
 }
 
 .wt-vps-picker {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  position: relative;
 }
 
 .wt-vps-icon {
@@ -51,114 +74,135 @@
 }
 
 .wt-vps-select {
-  padding: 4px 10px;
+  padding: 6px 12px;
   background: #ffffff;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
-  font-size: var(--text-xs);
+  font-size: var(--text-2xs);
   font-weight: var(--weight-medium);
   color: var(--color-text-primary);
   cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--duration-fast);
 }
 
-.wt-vps-select:focus {
-  outline: none;
+.wt-vps-select:focus,
+.wt-vps-select:hover {
   border-color: var(--color-accent);
+  outline: none;
 }
 
 .wt-vps-action-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
-  background: var(--color-bg-root);
+  padding: 6px 12px;
+  background: #ffffff;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--duration-fast);
 }
 
-.wt-vps-action-btn:hover {
-  background: #ffffff;
+.wt-vps-action-btn:hover:not(:disabled) {
+  background: #f8fafc;
   border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
-.wt-vps-action-btn--danger:hover {
+.wt-vps-action-btn--danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+
+.wt-vps-action-btn--danger:hover:not(:disabled) {
+  background: var(--color-danger-muted);
   border-color: var(--color-danger);
   color: var(--color-danger);
 }
 
 .wt-form__grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.5fr 1.5fr auto;
-  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  align-items: center;
 }
 
-.wt-form__grid input {
-  padding: var(--space-2) var(--space-3);
+.wt-input-wrap input {
+  width: 100%;
+  padding: 8px 12px;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
   background: #ffffff;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
   color: var(--color-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all var(--duration-fast);
 }
 
-.wt-form__grid input:focus {
+.wt-input-wrap input:focus {
   outline: none;
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
-/* Button */
 .wt-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
   border-radius: var(--radius-md);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--duration-fast);
   white-space: nowrap;
-  transition: opacity var(--duration-fast);
 }
 
 .wt-btn--connect {
-  background: var(--color-success);
-  color: #fff;
+  background: var(--color-accent);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+.wt-btn--connect:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
 }
 
 .wt-btn--disconnect {
-  background: var(--color-danger);
-  color: #fff;
+  background: #dc2626;
+  color: #ffffff;
 }
 
-.wt-btn:hover:not(:disabled) {
-  opacity: 0.9;
+.wt-btn--disconnect:hover {
+  background: #b91c1c;
 }
 
-.wt-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Snippets Panel ── */
-.wt-snippets-panel {
+/* ── Snippets Card ── */
+.wt-snippets-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  background: #f8f9fc;
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
+  gap: var(--space-3);
 }
 
 .wt-snippets__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .wt-snippets__title {
@@ -166,85 +210,84 @@
   align-items: center;
   gap: 6px;
   font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
 }
 
 .wt-add-snippet-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
+  padding: 4px 10px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
   border-radius: var(--radius-md);
-  font-size: 11px;
+  color: var(--color-accent);
+  font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--duration-fast);
 }
 
 .wt-add-snippet-btn:hover {
-  background: var(--color-accent-hover);
+  background: #e0e7ff;
 }
 
 .wt-snippets__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-2);
 }
 
 .wt-snippet-chip {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
-  background: #ffffff;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f8fafc;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
   cursor: pointer;
-  position: relative;
-  transition: all 0.15s;
+  transition: all var(--duration-fast);
 }
 
 .wt-snippet-chip:hover {
+  background: #ffffff;
   border-color: var(--color-accent);
-  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
 }
 
 .wt-snippet-cat {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: var(--weight-bold);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  background: #e2e8f0;
+  color: #475569;
   text-transform: uppercase;
-  color: var(--color-accent);
-  letter-spacing: 0.05em;
 }
 
 .wt-snippet-name {
-  font-size: 12px;
+  font-size: var(--text-2xs);
   font-weight: var(--weight-semibold);
   color: var(--color-text-primary);
+  flex-shrink: 0;
 }
 
 .wt-snippet-cmd {
   font-size: 11px;
-  font-family: var(--font-mono);
   color: var(--color-text-muted);
-  white-space: nowrap;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: #f1f5f9;
-  padding: 2px 6px;
-  border-radius: 3px;
-  margin-top: 2px;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .wt-snippet-actions {
-  position: absolute;
-  top: 6px;
-  right: 6px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -258,67 +301,60 @@
   color: var(--color-accent);
 }
 
-.wt-snippet-icon--check {
-  color: var(--color-success);
-}
-
 .wt-snippet-del {
-  background: none;
+  background: transparent;
   border: none;
-  color: #dc2626;
-  opacity: 0;
+  color: var(--color-text-dim);
   cursor: pointer;
   padding: 2px;
-  transition: opacity 0.15s;
-}
-
-.wt-snippet-chip:hover .wt-snippet-del {
-  opacity: 0.6;
+  opacity: 0.5;
+  transition: opacity var(--duration-fast);
 }
 
 .wt-snippet-del:hover {
-  opacity: 1 !important;
+  opacity: 1;
+  color: var(--color-danger);
 }
 
 /* ── Modal Add Snippet ── */
 .wt-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: var(--z-modal);
   padding: var(--space-4);
 }
 
 .wt-modal {
   background: #ffffff;
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  max-width: 480px;
   width: 100%;
-  max-width: 440px;
-  padding: var(--space-4);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
 }
 
 .wt-modal__header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 8px;
   font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-border-default);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .wt-modal__form {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .wt-modal__field {
@@ -328,18 +364,23 @@
 }
 
 .wt-modal__field label {
-  font-size: var(--text-xs);
+  font-size: 11px;
   font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
+  color: #475569;
 }
 
 .wt-modal__field input,
 .wt-modal__field textarea {
-  padding: var(--space-2) var(--space-3);
+  padding: 8px 12px;
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
+  font-family: inherit;
+}
+
+.wt-modal__field textarea {
   font-family: var(--font-mono);
+  resize: vertical;
 }
 
 .wt-modal__actions {
@@ -347,11 +388,11 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .wt-modal-btn {
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
@@ -359,40 +400,55 @@
 }
 
 .wt-modal-btn--cancel {
-  background: none;
-  border: 1px solid var(--color-border-default);
-  color: var(--color-text-muted);
+  background: #f1f5f9;
+  color: var(--color-text-secondary);
 }
 
 .wt-modal-btn--submit {
   background: var(--color-accent);
-  color: #fff;
-  border: none;
+  color: #ffffff;
 }
 
-/* ── Terminal Container ── */
-.wt-container {
-  height: 380px;
-  background: #0d1117;
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
+/* ── Terminal Window ── */
+.wt-terminal-window {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
   overflow: hidden;
+  background: #090d16;
+  box-shadow: var(--shadow-lg);
+}
+
+.wt-mac-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #151d2f;
+  border-bottom: 1px solid #1e293b;
+  position: relative;
+}
+
+.wt-mac-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wt-mac-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.wt-container {
+  padding: 14px;
+  min-height: 480px;
 }
 
 .wt-xterm {
   width: 100%;
   height: 100%;
-}
-
-.wt-xterm .xterm {
-  height: 100%;
-}
-
-@media (max-width: 768px) {
-  .wt-form__grid {
-    grid-template-columns: 1fr;
-  }
-  .wt-snippets__grid {
-    grid-template-columns: 1fr;
-  }
 }

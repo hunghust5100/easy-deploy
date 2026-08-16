@@ -76,10 +76,6 @@ export function ConfigProvider({ children }) {
     });
   }, []);
 
-  const applyGithubResult = useCallback((suggestedConfig) => {
-    setConfig((prev) => ({ ...prev, ...suggestedConfig }));
-  }, []);
-
   const fetchPreview = useCallback(async (targetConfig = config) => {
     setPreviewLoading(true);
     try {
@@ -93,6 +89,36 @@ export function ConfigProvider({ children }) {
       setPreviewLoading(false);
     }
   }, [config]);
+
+  const applyGithubResult = useCallback(async (suggestedConfig) => {
+    if (!suggestedConfig) return;
+
+    setConfig((prev) => {
+      const updated = {
+        ...prev,
+        ...suggestedConfig,
+        appName: suggestedConfig.appName || prev.appName,
+        techStack: suggestedConfig.techStack || prev.techStack,
+        techVersion: suggestedConfig.techVersion || prev.techVersion,
+        appPort: suggestedConfig.appPort || prev.appPort,
+        hostPort: suggestedConfig.hostPort || prev.hostPort,
+        dbType: suggestedConfig.dbType || prev.dbType,
+        dbPort: suggestedConfig.dbPort || prev.dbPort,
+        deployPath: suggestedConfig.deployPath || `/root/${suggestedConfig.appName || prev.appName}`,
+      };
+
+      try {
+        localStorage.setItem(LOCAL_CONFIG_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+
+      // Automatically re-fetch preview code with new analyzed config
+      fetchPreview(updated);
+
+      return updated;
+    });
+  }, [fetchPreview]);
 
   // Tự động fetch preview ngay lần đầu nạp trang
   useEffect(() => {

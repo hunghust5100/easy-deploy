@@ -1,5 +1,5 @@
 /* ============================================
-   Footer
+   Footer — Modern Clean Light
    ============================================ */
 
 .footer {
@@ -9,16 +9,16 @@
   justify-content: center;
   padding: 0 var(--space-5);
   border-top: 1px solid var(--color-border-default);
-  background: var(--color-bg-surface);
+  background: #ffffff;
   flex-shrink: 0;
 }
 
 .footer__text {
-  font-size: var(--text-xs);
+  font-size: var(--text-2xs);
   color: var(--color-text-muted);
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 5px;
 }
 
 .footer__heart {
@@ -30,9 +30,9 @@
 
 @keyframes footer-heartbeat {
   0%, 100% { transform: scale(1); }
-  14%      { transform: scale(1.2); }
+  14%      { transform: scale(1.25); }
   28%      { transform: scale(1); }
-  42%      { transform: scale(1.2); }
+  42%      { transform: scale(1.25); }
   56%      { transform: scale(1); }
 }
 

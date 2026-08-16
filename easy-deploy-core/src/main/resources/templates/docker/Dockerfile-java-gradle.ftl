@@ -1,6 +1,6 @@
 # ==============================================================================
 # Multi-stage Dockerfile chuẩn tối ưu cho Java Spring Boot (Gradle)
-# Tuân thủ quy trình 7 bước tiêu chuẩn & Tối ưu Layered JAR & Non-root User
+# Tuân thủ quy trình 7 bước tiêu chuẩn & Tối ưu Non-root User
 # ==============================================================================
 
 # 1. Base Image Builder (JDK + Gradle Alpine)
@@ -9,38 +9,28 @@ FROM gradle:8.6-jdk${config.techVersion}-alpine AS builder
 # 2. WORKDIR
 WORKDIR /app
 
-# 3. COPY file khai báo thư viện trước
-COPY build.gradle settings.gradle ./
-COPY gradle ./gradle
-COPY gradlew ./
+# 3. COPY mã nguồn và file cấu hình Gradle
+COPY . .
 
-# 4. RUN tải dependencies trước để cache layer
-RUN ./gradlew dependencies --no-daemon || true
-
-# 5. COPY mã nguồn và đóng gói JAR
-COPY src ./src
-RUN ./gradlew bootJar --no-daemon -x test
-
-# Tách Spring Boot Layered JAR
-RUN java -Djarmode=layertools -jar build/libs/*.jar extract || java -jar build/libs/*.jar extract --destination .
+# 4. RUN cấp quyền và biên dịch Boot JAR
+RUN chmod +x ./gradlew 2>/dev/null || true
+RUN if [ -f gradlew ]; then ./gradlew bootJar --no-daemon -x test; else gradle bootJar --no-daemon -x test; fi
 
 # ------------------------------------------------------------------------------
-# Stage 2: Runtime Image (JRE Alpine)
+# Stage 2: Runtime Image siêu nhẹ (JRE Alpine)
 # ------------------------------------------------------------------------------
 FROM eclipse-temurin:${config.techVersion}-jre-alpine
 WORKDIR /app
 
-# Non-root User
+# Tối ưu Bảo mật: Tạo và chuyển sang User thường (Non-root)
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-COPY --from=builder /app/dependencies/ ./
-COPY --from=builder /app/spring-boot-loader/ ./
-COPY --from=builder /app/snapshot-dependencies/ ./
-COPY --from=builder /app/application/ ./
+# Copy file jar đã build
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-# 6. EXPOSE
+# 6. EXPOSE cổng ứng dụng
 EXPOSE ${config.appPort?c}
 
-# 7. ENTRYPOINT
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+# 7. ENTRYPOINT chạy ứng dụng
+ENTRYPOINT ["java", "-jar", "app.jar"]

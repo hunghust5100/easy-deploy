@@ -25,12 +25,26 @@ public class GithubAnalyzerController {
     public ResponseEntity<?> analyzeGithubRepo(@RequestBody Map<String, String> payload) {
         String repoUrl = payload.get("repoUrl");
         if (repoUrl == null || repoUrl.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "repoUrl is required"));
+            return ResponseEntity.badRequest().body(Map.of("error", "Vui lòng nhập đường dẫn GitHub repository (repoUrl)."));
         }
 
         try {
             List<String> filePaths = githubTreeScanner.scanGithubRepository(repoUrl);
             ProjectConfig config = ruleEngine.analyzeFilePaths(filePaths);
+
+            config.setRepoUrl(repoUrl);
+
+            // Extract repo name and owner from repoUrl
+            try {
+                String[] ownerAndRepo = githubTreeScanner.parseGithubUrl(repoUrl);
+                String owner = ownerAndRepo[0];
+                String repo = ownerAndRepo[1];
+                String cleanAppName = repo.toLowerCase().replaceAll("[^a-z0-9_-]", "-");
+                config.setAppName(cleanAppName);
+                config.setDockerHubUser(owner);
+                config.setDockerHubUsername(owner);
+                config.setDeployPath("/root/" + cleanAppName);
+            } catch (Exception ignored) {}
 
             return ResponseEntity.ok(Map.of(
                 "repoUrl", repoUrl,
@@ -38,7 +52,7 @@ public class GithubAnalyzerController {
                 "suggestedConfig", config
             ));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

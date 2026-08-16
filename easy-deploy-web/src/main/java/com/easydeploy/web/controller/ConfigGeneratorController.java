@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -53,32 +53,43 @@ public class ConfigGeneratorController {
     @PostMapping("/preview")
     public ResponseEntity<Map<String, String>> previewConfig(@RequestBody ProjectConfig config) {
         try {
-            Map<String, String> previewMap = new HashMap<>();
+            Map<String, String> previewMap = new LinkedHashMap<>();
 
             // 1. Dockerfile
             String dockerfileTemplate = resolveDockerfileTemplate(config.getTechStack());
             String dockerfile = renderEngine.renderTemplate(dockerfileTemplate, config);
             previewMap.put("Dockerfile", dockerfile);
 
-            // 2. .dockerignore
-            String dockerignore = renderEngine.renderTemplate("docker/.dockerignore.ftl", config);
-            previewMap.put(".dockerignore", dockerignore);
-
-            // 3. docker-compose.yml
+            // 2. docker-compose.yml
             String compose = renderEngine.renderTemplate("docker/docker-compose.ftl", config);
             previewMap.put("docker-compose.yml", compose);
 
-            // 4. nginx.conf (Nếu bật)
+            // 3. .env & .env.example
+            String envContent = renderEngine.renderTemplate("env/.env.ftl", config);
+            previewMap.put(".env", envContent);
+
+            String envExample = renderEngine.renderTemplate("env/.env.example.ftl", config);
+            previewMap.put(".env.example", envExample);
+
+            // 4. .dockerignore
+            String dockerignore = renderEngine.renderTemplate("docker/.dockerignore.ftl", config);
+            previewMap.put(".dockerignore", dockerignore);
+
+            // 5. nginx.conf (Nếu bật)
             if (config.isEnableNginx()) {
                 String nginx = renderEngine.renderTemplate("nginx/nginx.ftl", config);
                 previewMap.put("nginx.conf", nginx);
             }
 
-            // 5. CI/CD (Nếu bật)
+            // 6. CI/CD (Nếu bật)
             if (config.isEnableCicd()) {
                 String cicd = renderEngine.renderTemplate("cicd/deploy-github.ftl", config);
                 previewMap.put("deploy.yml", cicd);
             }
+
+            // 7. setup-server.sh
+            String setupContent = renderEngine.renderTemplate("setup/setup-server.sh.ftl", config);
+            previewMap.put("setup-server.sh", setupContent);
 
             return ResponseEntity.ok(previewMap);
         } catch (Exception e) {
@@ -105,20 +116,31 @@ public class ConfigGeneratorController {
                 String compose = renderEngine.renderTemplate("docker/docker-compose.ftl", config);
                 addZipEntry(zos, "docker-compose.yml", compose);
 
-                // 4. nginx.conf
+                // 4. .env & .env.example
+                String envContent = renderEngine.renderTemplate("env/.env.ftl", config);
+                addZipEntry(zos, ".env", envContent);
+
+                String envExample = renderEngine.renderTemplate("env/.env.example.ftl", config);
+                addZipEntry(zos, ".env.example", envExample);
+
+                // 5. nginx.conf
                 if (config.isEnableNginx()) {
                     String nginx = renderEngine.renderTemplate("nginx/nginx.ftl", config);
                     addZipEntry(zos, "nginx.conf", nginx);
                 }
 
-                // 5. GitHub Actions CI/CD Pipeline
+                // 6. GitHub Actions CI/CD Pipeline
                 if (config.isEnableCicd()) {
                     String cicd = renderEngine.renderTemplate("cicd/deploy-github.ftl", config);
                     addZipEntry(zos, ".github/workflows/deploy.yml", cicd);
                 }
 
-                // 6. README-DEPLOY.md
-                String readme = "# Easy Deploy Instructions\n\nRun your stack with:\n```bash\ndocker compose up -d\n```\n";
+                // 7. setup-server.sh
+                String setupContent = renderEngine.renderTemplate("setup/setup-server.sh.ftl", config);
+                addZipEntry(zos, "setup-server.sh", setupContent);
+
+                // 8. README-DEPLOY.md
+                String readme = "# Easy Deploy Instructions for " + config.getAppName() + "\n\nRun your stack locally with:\n```bash\ndocker compose up -d --build\n```\n\nDeploy to VPS:\n```bash\neasy-deploy deploy --host <vps_ip> --user root\n```\n";
                 addZipEntry(zos, "README-DEPLOY.md", readme);
             }
 
@@ -146,8 +168,10 @@ public class ConfigGeneratorController {
                     }
                     addZipEntry(zos, filename, entry.getValue());
                 }
-                String readme = "# Easy Deploy Instructions\n\nRun your stack with:\n```bash\ndocker compose up -d\n```\n";
-                addZipEntry(zos, "README-DEPLOY.md", readme);
+                if (!files.containsKey("README-DEPLOY.md")) {
+                    String readme = "# Easy Deploy Custom Configuration Package\n\nRun your stack with:\n```bash\ndocker compose up -d\n```\n";
+                    addZipEntry(zos, "README-DEPLOY.md", readme);
+                }
             }
 
             byte[] zipBytes = baos.toByteArray();

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Copy, Check, ShieldCheck, Globe, Key, Server, FileText, ExternalLink, HelpCircle } from 'lucide-react';
+import { X, Copy, Check, ShieldCheck, Globe, Key, Server, FileText, ExternalLink, HelpCircle, ArrowRight } from 'lucide-react';
 import { useConfig } from '../../context/ConfigContext';
 import './ManualDeployModal.css';
 
@@ -49,10 +49,12 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
         {/* Modal Header */}
         <div className="md-header">
           <div className="md-title">
-            <ShieldCheck size={20} className="md-title-icon" />
+            <div className="md-title-icon-wrap">
+              <ShieldCheck size={20} className="md-title-icon" />
+            </div>
             <div>
-              <span>Hướng dẫn Cấu hình Bắt buộc</span>
-              <span className="md-subtitle">Các thiết lập thủ công cần làm bên ngoài hệ thống Easy-Deploy</span>
+              <h3 className="md-title-text">Hướng dẫn Cấu hình Bắt buộc Ngoài Hệ Thống</h3>
+              <span className="md-subtitle">Các thiết lập thủ công người dùng cần cấu hình trên GitHub, Vercel & VPS</span>
             </div>
           </div>
           <button type="button" className="md-close" onClick={onClose}>
@@ -81,9 +83,9 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
         {/* Modal Body */}
         <div className="md-body">
           <div className="md-banner">
-            <HelpCircle size={15} className="md-banner-icon" />
+            <HelpCircle size={16} className="md-banner-icon" />
             <span>
-              Easy-Deploy đã tự động hóa 100% các bước đóng gói Docker, Nginx & Deployment. Dưới đây là các cấu hình tài khoản cá nhân & hạ tầng bên ngoài bạn cần khai báo thủ công:
+              EasyDeploy đã tự động hóa 100% việc sinh Dockerfile, Nginx & Pipeline. Dưới đây là các thông tin bí mật và hạ tầng bên ngoài bạn cần khai báo:
             </span>
           </div>
 
@@ -110,7 +112,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                         onClick={() => handleCopy(s.name, s.name)}
                         title="Sao chép tên biến"
                       >
-                        {copiedKey === s.name ? <Check size={14} className="copied" /> : <Copy size={14} />}
+                        {copiedKey === s.name ? <Check size={14} className="copied text-success" /> : <Copy size={14} />}
                       </button>
                     </div>
                     <span className="md-secret-desc">{s.desc}</span>
@@ -127,7 +129,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                 <div>
                   <h4 className="md-section-title">Triển khai Giao diện Frontend lên Vercel</h4>
                   <p className="md-desc">
-                    Dành cho trường hợp bạn tách riêng Frontend (React/Vite/Next.js) và muốn lưu trữ trên Vercel CDN:
+                    Dành cho trường hợp bạn tách riêng Frontend (React/Vite/Next.js) và muốn deploy lên CDN toàn cầu của Vercel:
                   </p>
                 </div>
                 <a
@@ -146,7 +148,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                   <div className="md-timeline-badge">1</div>
                   <div className="md-timeline-content">
                     <h5>Import Repository</h5>
-                    <p>Đăng nhập Vercel, chọn <strong>Add New &gt; Project</strong> và chọn Repo GitHub của bạn.</p>
+                    <p>Đăng nhập Vercel, chọn <strong>Add New &gt; Project</strong> và import Repo GitHub của bạn.</p>
                   </div>
                 </div>
 
@@ -175,7 +177,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                         className="md-copy-btn"
                         onClick={() => handleCopy('VITE_API_BASE_URL=https://api.yourdomain.com', 'vercel_env')}
                       >
-                        {copiedKey === 'vercel_env' ? <Check size={14} className="copied" /> : <Copy size={14} />}
+                        {copiedKey === 'vercel_env' ? <Check size={14} className="copied text-success" /> : <Copy size={14} />}
                       </button>
                     </div>
                   </div>
@@ -207,7 +209,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                       className="md-copy-btn"
                       onClick={() => handleCopy('sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw allow 22/tcp', 'ufw')}
                     >
-                      {copiedKey === 'ufw' ? <Check size={14} className="copied" /> : <Copy size={14} />}
+                      {copiedKey === 'ufw' ? <Check size={14} className="copied text-success" /> : <Copy size={14} />}
                     </button>
                   </div>
                 </div>
@@ -229,7 +231,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                     </thead>
                     <tbody>
                       <tr>
-                        <td><span className="md-badge md-badge--blue">A</span></td>
+                        <td><span className="badge badge--info">A</span></td>
                         <td><code>@</code> (hoặc <code>api</code>)</td>
                         <td><code>IP_PUBLIC_VPS_CỦA_BẠN</code></td>
                       </tr>
@@ -250,7 +252,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                       className="md-copy-btn"
                       onClick={() => handleCopy('curl -fsSL https://get.docker.com | sh', 'docker_install')}
                     >
-                      {copiedKey === 'docker_install' ? <Check size={14} className="copied" /> : <Copy size={14} />}
+                      {copiedKey === 'docker_install' ? <Check size={14} className="copied text-success" /> : <Copy size={14} />}
                     </button>
                   </div>
                 </div>
@@ -274,7 +276,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
                     className="md-copy-btn"
                     onClick={() => handleCopy(envExample, 'env_file')}
                   >
-                    {copiedKey === 'env_file' ? <Check size={14} className="copied" /> : <Copy size={14} />}
+                    {copiedKey === 'env_file' ? <Check size={14} className="copied text-success" /> : <Copy size={14} />}
                     <span style={{ fontSize: '11px', marginLeft: '4px' }}>Sao chép mẫu .env</span>
                   </button>
                 </div>
@@ -289,5 +291,3 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
 }
 
 export default ManualDeployModal;
-
-

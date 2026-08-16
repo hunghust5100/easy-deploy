@@ -1,8 +1,35 @@
 import { useState, useCallback } from 'react';
-import { RefreshCw, Download, Loader2, FileCode2, Copy, Check, RotateCcw, Edit3 } from 'lucide-react';
+import {
+  RefreshCw,
+  Download,
+  Loader2,
+  FileCode2,
+  Copy,
+  Check,
+  RotateCcw,
+  Edit3,
+  Container,
+  Layers,
+  Key,
+  Globe,
+  GitBranch,
+  FileText,
+  Terminal,
+  FileArchive,
+} from 'lucide-react';
 import { useConfig } from '../../context/ConfigContext';
 import { generateCustomZip } from '../../services/downloadService';
 import './PreviewPanel.css';
+
+function getFileIcon(filename) {
+  if (filename === 'Dockerfile' || filename.includes('Docker')) return <Container size={14} className="file-icon-docker" />;
+  if (filename.includes('docker-compose')) return <Layers size={14} className="file-icon-compose" />;
+  if (filename.startsWith('.env')) return <Key size={14} className="file-icon-env" />;
+  if (filename.includes('nginx')) return <Globe size={14} className="file-icon-nginx" />;
+  if (filename.includes('deploy.yml') || filename.includes('github')) return <GitBranch size={14} className="file-icon-cicd" />;
+  if (filename.endsWith('.sh')) return <Terminal size={14} className="file-icon-sh" />;
+  return <FileText size={14} />;
+}
 
 function PreviewPanel() {
   const {
@@ -56,6 +83,18 @@ function PreviewPanel() {
     setTimeout(() => setCopied(false), 2000);
   }, [previewFiles, activeFileId]);
 
+  const handleDownloadSingleFile = () => {
+    if (!previewFiles || !activeFileId) return;
+    const content = previewFiles[activeFileId] || '';
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = activeFileId;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const fileEntries = previewFiles ? Object.entries(previewFiles) : [];
   const currentContent = previewFiles ? (previewFiles[activeFileId] || '') : '';
   const originalContent = originalPreviewFiles ? (originalPreviewFiles[activeFileId] || '') : '';
@@ -64,10 +103,12 @@ function PreviewPanel() {
   return (
     <div className="preview-panel" id="preview-section">
       {/* ── Action Bar Header ── */}
-      <div className="preview-panel__actions">
+      <div className="preview-panel__actions-card">
         <div className="preview-panel__title-group">
           <FileCode2 size={18} className="preview-panel__header-icon" />
-          <h3 className="preview-panel__header-title">Kết quả & Trình chỉnh sửa Cấu hình</h3>
+          <h3 className="preview-panel__header-title">
+            DevOps Config Files ({fileEntries.length} Tệp tin)
+          </h3>
         </div>
 
         <div className="preview-panel__btn-group">
@@ -78,7 +119,7 @@ function PreviewPanel() {
             disabled={previewLoading}
             title="Sinh lại code theo thông số form"
           >
-            {previewLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
+            {previewLoading ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />}
             <span>{previewLoading ? 'Đang tạo...' : 'Làm mới Code'}</span>
           </button>
 
@@ -89,7 +130,7 @@ function PreviewPanel() {
               onClick={() => resetPreviewFile(activeFileId)}
               title="Khôi phục file này về code mẫu ban đầu"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={13} />
               <span>Khôi phục mẫu</span>
             </button>
           )}
@@ -101,8 +142,19 @@ function PreviewPanel() {
             disabled={!previewFiles}
             title="Sao chép nội dung file hiện tại"
           >
-            {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+            {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
             <span>{copied ? 'Đã sao chép!' : 'Sao chép'}</span>
+          </button>
+
+          <button
+            type="button"
+            className="preview-panel__btn preview-panel__btn--secondary"
+            onClick={handleDownloadSingleFile}
+            disabled={!previewFiles}
+            title="Tải riêng tệp này về máy"
+          >
+            <Download size={13} />
+            <span>Tải tệp này</span>
           </button>
 
           <button
@@ -110,10 +162,10 @@ function PreviewPanel() {
             className="preview-panel__btn preview-panel__btn--accent"
             onClick={handleDownload}
             disabled={downloading || !previewFiles}
-            title="Tải về bộ file cấu hình dạng .ZIP"
+            title="Tải về trọn bộ file cấu hình dạng .ZIP"
           >
-            {downloading ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
-            <span>{downloading ? 'Đang nén...' : 'Tải bộ ZIP'}</span>
+            {downloading ? <Loader2 size={14} className="spin" /> : <FileArchive size={14} />}
+            <span>{downloading ? 'Đang nén...' : 'Tải Trọn Bộ ZIP'}</span>
           </button>
         </div>
       </div>
@@ -123,8 +175,8 @@ function PreviewPanel() {
       {/* ── File Tabs + Interactive Code Editor ── */}
       {previewLoading ? (
         <div className="preview-panel__empty">
-          <Loader2 size={24} className="spin preview-panel__empty-icon" />
-          <p>Đang khởi tạo và biên dịch bộ file cấu hình xem trước...</p>
+          <Loader2 size={28} className="spin preview-panel__empty-icon" />
+          <p>Đang biên dịch và tổng hợp bộ file cấu hình xem trước...</p>
         </div>
       ) : fileEntries.length > 0 ? (
         <div className="preview-panel__viewer">
@@ -141,7 +193,7 @@ function PreviewPanel() {
                   className={`preview-panel__tab ${activeFileId === filename ? 'preview-panel__tab--active' : ''}`}
                   onClick={() => setActiveFileId(filename)}
                 >
-                  <FileCode2 size={13} />
+                  {getFileIcon(filename)}
                   <span>{filename}</span>
                   {modified && <span className="preview-panel__dot-modified" title="Đã chỉnh sửa" />}
                 </button>
@@ -155,7 +207,7 @@ function PreviewPanel() {
               <span className="preview-panel__filename">{activeFileId}</span>
               {isFileModified ? (
                 <span className="preview-panel__status preview-panel__status--modified">
-                  <Edit3 size={12} /> Đã chỉnh sửa
+                  <Edit3 size={11} /> Đã sửa thủ công
                 </span>
               ) : (
                 <span className="preview-panel__status preview-panel__status--clean">
@@ -163,7 +215,7 @@ function PreviewPanel() {
                 </span>
               )}
             </div>
-            <span className="preview-panel__edit-hint">💡 Bạn có thể gõ chỉnh sửa trực tiếp nội dung bên dưới</span>
+            <span className="preview-panel__edit-hint">💡 Có thể chỉnh sửa trực tiếp bên dưới trước khi tải về hoặc deploy</span>
           </div>
 
           {/* Interactive Code Editor TextArea */}
@@ -179,7 +231,7 @@ function PreviewPanel() {
         </div>
       ) : (
         <div className="preview-panel__empty">
-          <RefreshCw size={24} className="preview-panel__empty-icon" />
+          <RefreshCw size={28} className="preview-panel__empty-icon" />
           <p>Chưa có dữ liệu cấu hình. Nhấn nút bên dưới để tạo ngay.</p>
           <button
             type="button"

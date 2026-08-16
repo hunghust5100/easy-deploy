@@ -1,9 +1,14 @@
 package com.easydeploy.core.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.HashMap;
 import java.util.Map;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ProjectConfig {
+    private String repoUrl = "";
     private String appName = "my-app";
     private String techStack = "JAVA_MAVEN"; // JAVA_MAVEN, JAVA_GRADLE, NODE_FRONTEND, NODE_BACKEND, PYTHON
     private String techVersion = "21";
@@ -44,6 +49,9 @@ public class ProjectConfig {
     public ProjectConfig() {}
 
     // Getters and Setters
+    public String getRepoUrl() { return repoUrl; }
+    public void setRepoUrl(String repoUrl) { this.repoUrl = repoUrl; }
+
     public String getAppName() { return (appName != null && !appName.trim().isEmpty()) ? appName : "my-app"; }
     public void setAppName(String appName) { this.appName = appName; }
 
@@ -128,6 +136,14 @@ public class ProjectConfig {
     public String getAdminEmail() { return adminEmail; }
     public void setAdminEmail(String adminEmail) { this.adminEmail = adminEmail; }
 
+    @JsonIgnore
+    public String getFullDockerImageName() {
+        String user = (dockerHubUsername != null && !dockerHubUsername.trim().isEmpty()) ? dockerHubUsername.trim() : "myuser";
+        String tag = (dockerImageTag != null && !dockerImageTag.trim().isEmpty()) ? dockerImageTag.trim() : "latest";
+        return user + "/" + getAppName() + ":" + tag;
+    }
+
     public Map<String, String> getEnvVars() { return envVars; }
     public void setEnvVars(Map<String, String> envVars) { this.envVars = envVars; }
 }
+
