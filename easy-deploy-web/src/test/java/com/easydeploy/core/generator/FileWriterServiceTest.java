@@ -153,7 +153,8 @@ public class FileWriterServiceTest {
 
         String nginxContent = Files.readString(tempDir.resolve("nginx.conf"));
         assertTrue(nginxContent.contains("location /api/"));
-        assertTrue(nginxContent.contains("proxy_pass http://easy-deploy-web:8088/"));
+        assertTrue(nginxContent.contains("proxy_pass http://easy-deploy-web:8088;"));
+        assertTrue(nginxContent.contains("location /ws/"));
         assertTrue(nginxContent.contains("location /"));
         assertTrue(nginxContent.contains("proxy_pass http://easy-deploy-frontend:80"));
     }

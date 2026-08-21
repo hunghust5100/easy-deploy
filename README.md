@@ -1,99 +1,89 @@
-# Easy Deploy Tool (`easy-deploy`) 🚀
+# Easy Deploy (`easy-deploy`) 🚀
 
-**Easy Deploy** là giải pháp công cụ hỗ trợ tự động hóa sinh file cấu hình DevOps (Dockerfile, docker-compose, Nginx, GitHub Actions CI/CD), tích hợp tính năng **1-Click SSH Deploy** lên máy chủ VPS và **Web SSH Terminal** trực tiếp trên trình duyệt.
+**Easy Deploy** là nền tảng tự động hóa nhận diện mã nguồn, sinh trọn bộ cấu hình DevOps chuẩn hóa (Dockerfile đa tầng, Docker Compose, Nginx Reverse Proxy, GitHub Actions CI/CD) và hỗ trợ **Triển khai 1-Click lên VPS qua SSH** cùng **Web SSH Terminal** tương tác trực tiếp trên trình duyệt.
 
 ---
 
 ## 🌟 Tính năng Nổi bật
 
-* 🔍 **Smart Multi-Module Tech Stack Detector:** Tự động phân tích cây thư mục mã nguồn (Local hoặc qua GitHub URL) để nhận diện tất cả các packages/modules (Frontend React/Vite, Backend Java/Spring Boot, Python, Go, Node.js...).
-* 🧩 **Interactive Service Selector:** Cho phép người dùng trực quan lựa chọn và tùy biến cấu hình triển khai riêng cho từng module (port, container name, biến môi trường) hoặc triển khai toàn bộ hệ thống Full-stack chỉ với 1 cú click.
-* 🛠️ **DevOps Config Generator:** Sinh bộ file cấu hình tiêu chuẩn sản xuất:
-  * `Dockerfile` tối ưu multi-stage build độc lập cho từng module.
-  * `docker-compose.yml` ghép nối đa dịch vụ ứng dụng với các dịch vụ bổ trợ (PostgreSQL, MySQL, Redis, Nginx Gateway).
-  * `nginx.conf` cấu hình Smart Reverse Proxy tự động định tuyến `/` sang Frontend và `/api` sang Backend.
-  * `.github/workflows/deploy-github.yml` quy trình CI/CD hoàn chỉnh tự động build & push Docker Image và SSH deploy lên VPS.
-* 🚀 **1-Click SSH Deploy:** Tải file cấu hình, kết nối SSH/SFTP lên máy chủ từ xa, khởi chạy container và stream log thời gian thực về giao diện Web qua WebSocket.
-* 💻 **Web SSH Terminal:** Trình quản lý Terminal tương tác trực tiếp trên trình duyệt tích hợp `@xterm/xterm`.
-* 📋 **Hướng dẫn Cấu hình Bắt buộc (Manual Setup Guide):** Loại bỏ các bước triển khai thủ công rườm rà (vốn đã được tự động hóa), tập trung hướng dẫn người dùng cấu hình 4 hạng mục bắt buộc ngoài hệ thống:
-  1. **GitHub Secrets:** Khai báo thông tin bảo mật CI/CD (`DOCKERHUB_TOKEN`, `SERVER_HOST`, `SERVER_USER`...).
-  2. **Vercel / Netlify:** Triển khai Frontend độc lập và kết nối API Backend (`VITE_API_BASE_URL`).
-  3. **VPS Firewall & DNS:** Mở các port giao tiếp (`80`, `443`, `22`), trỏ tên miền (A Record) về IP VPS.
-  4. **Biến Môi trường Production (.env):** Khai báo mật khẩu Database, JWT Secret Key trên server VPS.
+* 🔍 **Nhận diện Ngôn ngữ & Framework tự động (Smart Tech Stack Detector):** Quét cây thư mục mã nguồn từ xa qua GitHub API / Zipball stream hoặc thư mục cục bộ, nhận diện chính xác các thành phần: Java Spring Boot (Maven/Gradle), Node.js (React, Vite, Vue, Express, NestJS, Next.js), Python (FastAPI, Django, Flask), Go, Rust, PHP Laravel, .NET, Ruby on Rails...
+* 🧩 **Hỗ trợ Fullstack & Monorepo (Interactive Service Selector):** Tự động phân tách Frontend SPA, Backend API và dịch vụ cơ sở dữ liệu con; cho phép tùy biến cổng mạng, biến môi trường và thiết lập Nginx Gateway định tuyến thông minh.
+* 🛠️ **Bộ sinh cấu hình DevOps chuẩn hóa (DevOps Config Generator):**
+  * `Dockerfile` tối ưu hóa đa tầng (Multi-stage Build), Non-root User bảo mật và tận dụng triệt để Layer Caching giúp giảm 77% – 96% dung lượng Image.
+  * `docker-compose.yml` ghép nối đa dịch vụ và container CSDL (PostgreSQL, MySQL, MariaDB, MongoDB, Redis).
+  * `nginx.conf` Smart Gateway tự động reverse proxy `/` về Frontend, `/api/` về Backend và `/ws/` về WebSocket Server với timeout tối ưu.
+  * `.github/workflows/deploy.yml` Pipeline CI/CD tự động build & push Docker Hub và kích hoạt triển khai VPS.
+* 🚀 **Triển khai 1-Click qua SSH (Agentless Architecture):** Tự động khởi tạo môi trường VPS (Docker, Docker Compose, Nginx, UFW), tải cấu hình qua SFTP và khởi chạy container qua kết nối SSH2 tiêu chuẩn mà không cần cài đặt bất kỳ agent nền nào lên máy chủ.
+* 💻 **Web SSH Terminal & Live Log Streaming:** Tích hợp `@xterm/xterm` và Spring WebSocket để theo dõi tiến trình triển khai thời gian thực và quản trị máy chủ Linux trực tiếp từ giao diện web.
+* 🗄️ **Quản lý Dự án & Máy chủ (Server & Project Management):** Lưu trữ thông tin máy chủ VPS, cấu hình dự án và lịch sử các đợt triển khai trên cơ sở dữ liệu H2 bền vững.
 
 ---
 
-## 🏗️ Cấu trúc Kiến trúc Monorepo Multi-Module
+## 🏗️ Cấu trúc Dự án
 
-Dự án được chuẩn hóa thành cấu trúc Monorepo mạch lạc:
+Dự án được tổ chức phân tách rõ ràng giữa tầng giao diện người dùng và máy chủ xử lý:
 
 ```text
 easy-deploy/
-├── easy-deploy-core/          # Submodule 1: Thư viện Lõi Pure Java 25 (Detector, FreeMarker Engine, Exporter)
-├── easy-deploy-cli/           # Submodule 2: Ứng dụng CLI Tool (Picocli + JLine Interactive Wizard)
-├── easy-deploy-web/           # Submodule 3: Backend REST API & WebSocket Server (Spring Boot 3.4 + JSch SSH)
-├── easy-deploy-frontend/      # Submodule 4: Giao diện Web Client (React + Vite + Tailwind CSS + XTerm)
-├── build.gradle               # Gradle Multi-Project configuration
+├── easy-deploy-frontend/      # Ứng dụng Giao diện Web SPA (React 19 + Vite + Xterm.js + Lucide)
+├── easy-deploy-web/           # Máy chủ Backend tích hợp (Spring Boot 3.4 + Core DevOps Engine + JSch SSH + WebSocket)
+│   ├── src/main/java/com/easydeploy/
+│   │   ├── core/              # Động cơ lõi: Detector, Generator (FreeMarker), Scanner, Parser, SSH Core
+│   │   └── web/               # Tầng Web: Controllers, Services, Repositories, Entities, WebSocket Handlers
+│   └── src/main/resources/
+│       ├── templates/         # Mẫu cấu hình FreeMarker (Docker, Compose, Nginx, CI/CD, Script)
+│       └── application.yml
+├── build.gradle               # Cấu hình Gradle Root
 ├── settings.gradle
 └── README.md
 ```
 
 ---
 
-## 🚀 Hướng dẫn Biên dịch & Kích chạy
+## 🚀 Hướng dẫn Cài đặt & Khởi chạy
 
-### 1. Yêu cầu Môi trường
-* **Java SDK:** Java 17 trở lên (Hỗ trợ tốt nhất trên Java 21 / 25).
-* **Node.js:** Node 18+ và `npm`.
+### 1. Yêu cầu Hệ thống
+* **Java SDK:** Java 17 hoặc Java 21 LTS trở lên.
+* **Node.js:** Node.js 18+ và `npm`.
 
 ---
 
-### 2. Khởi chạy Ứng dụng Web UI (Frontend + Backend)
+### 2. Khởi chạy Ứng dụng
 
-#### **Bước 2.1: Chạy Backend WebSocket Server (Spring Boot)**
+#### **Bước 2.1: Chạy Backend Server (Spring Boot)**
 ```bash
 ./gradlew :easy-deploy-web:bootRun
 ```
-* Backend API & WebSocket Server sẽ lắng nghe tại: `http://localhost:8088`.
-* Các endpoint WebSocket:
-  * `/ws/deploy`: Xử lý 1-Click Deploy & Stream Log.
-  * `/ws/ssh`: Xử lý Web SSH Terminal.
+* Backend API hoạt động tại: `http://localhost:8088`
+* WebSocket Endpoints:
+  * `/ws/deploy-logs`: Stream log triển khai thời gian thực.
+  * `/ws/ssh-terminal`: Phiên điều khiển Web SSH Terminal.
 
 #### **Bước 2.2: Chạy Frontend Client (React + Vite)**
 Mở một tab terminal khác:
 ```bash
 cd easy-deploy-frontend
-npm install   # Nếu chạy lần đầu
+npm install    # Chạy lần đầu tiên
 npm run dev
 ```
 * Truy cập giao diện ứng dụng tại: `http://localhost:5173`.
 
 ---
 
-### 3. Biên dịch & Sử dụng CLI Tool
-
-#### **Biên dịch file `.jar`:**
-```bash
-./gradlew build
-```
-File thực thi CLI `.jar` sẽ được sinh ra tại: `easy-deploy-cli/build/libs/easy-deploy-cli-1.0.0-SNAPSHOT.jar`.
-
-#### **Chạy thử CLI Tool:**
-* **Tự động quét thư mục & sinh cấu hình:**
-  ```bash
-  java -jar easy-deploy-cli/build/libs/easy-deploy-cli-1.0.0-SNAPSHOT.jar scan
-  ```
-* **Chế độ Tương tác (Interactive Wizard):**
-  ```bash
-  java -jar easy-deploy-cli/build/libs/easy-deploy-cli-1.0.0-SNAPSHOT.jar init
-  ```
-
----
-
 ## 🧪 Kiểm thử (Testing)
 
-Khởi chạy toàn bộ unit tests cho các module:
+### Kiểm thử Backend
 ```bash
-./gradlew test
+./gradlew clean test
 ```
 
+### Đóng gói Backend JAR
+```bash
+./gradlew :easy-deploy-web:bootJar
+```
+
+### Kiểm thử & Build Frontend
+```bash
+cd easy-deploy-frontend
+npm run build
+```
