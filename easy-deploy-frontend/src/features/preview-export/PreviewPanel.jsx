@@ -120,18 +120,18 @@ function PreviewPanel() {
             title="Sinh lại code theo thông số form"
           >
             {previewLoading ? <Loader2 size={13} className="spin" /> : <RefreshCw size={13} />}
-            <span>{previewLoading ? 'Đang tạo...' : 'Làm mới Code'}</span>
+            <span>{previewLoading ? 'Đang tạo...' : 'Làm mới'}</span>
           </button>
 
           {isFileModified && (
             <button
               type="button"
-              className="preview-panel__btn preview-panel__btn--warning"
+              className="preview-panel__btn preview-panel__btn--secondary"
               onClick={() => resetPreviewFile(activeFileId)}
-              title="Khôi phục file này về code mẫu ban đầu"
+              title="Khôi phục file về ban đầu"
             >
               <RotateCcw size={13} />
-              <span>Khôi phục mẫu</span>
+              <span>Khôi phục</span>
             </button>
           )}
 
@@ -140,10 +140,10 @@ function PreviewPanel() {
             className="preview-panel__btn preview-panel__btn--secondary"
             onClick={handleCopyCode}
             disabled={!previewFiles}
-            title="Sao chép nội dung file hiện tại"
+            title="Sao chép nội dung file"
           >
             {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
-            <span>{copied ? 'Đã sao chép!' : 'Sao chép'}</span>
+            <span>{copied ? 'Đã chép!' : 'Sao chép'}</span>
           </button>
 
           <button
@@ -151,10 +151,10 @@ function PreviewPanel() {
             className="preview-panel__btn preview-panel__btn--secondary"
             onClick={handleDownloadSingleFile}
             disabled={!previewFiles}
-            title="Tải riêng tệp này về máy"
+            title="Tải tệp tin này"
           >
             <Download size={13} />
-            <span>Tải tệp này</span>
+            <span>Tải tệp</span>
           </button>
 
           <button
@@ -162,10 +162,10 @@ function PreviewPanel() {
             className="preview-panel__btn preview-panel__btn--accent"
             onClick={handleDownload}
             disabled={downloading || !previewFiles}
-            title="Tải về trọn bộ file cấu hình dạng .ZIP"
+            title="Tải về file .ZIP"
           >
             {downloading ? <Loader2 size={14} className="spin" /> : <FileArchive size={14} />}
-            <span>{downloading ? 'Đang nén...' : 'Tải Trọn Bộ ZIP'}</span>
+            <span>{downloading ? 'Đang nén...' : 'Tải ZIP'}</span>
           </button>
         </div>
       </div>
@@ -176,7 +176,7 @@ function PreviewPanel() {
       {previewLoading ? (
         <div className="preview-panel__empty">
           <Loader2 size={28} className="spin preview-panel__empty-icon" />
-          <p>Đang biên dịch và tổng hợp bộ file cấu hình xem trước...</p>
+          <p>Đang sinh mã cấu hình...</p>
         </div>
       ) : fileEntries.length > 0 ? (
         <div className="preview-panel__viewer">
@@ -207,11 +207,11 @@ function PreviewPanel() {
               <span className="preview-panel__filename">{activeFileId}</span>
               {isFileModified ? (
                 <span className="preview-panel__status preview-panel__status--modified">
-                  <Edit3 size={11} /> Đã sửa thủ công
+                  <Edit3 size={11} /> Đã chỉnh sửa
                 </span>
               ) : (
                 <span className="preview-panel__status preview-panel__status--clean">
-                  Tự động sinh từ mẫu
+                  Mặc định
                 </span>
               )}
             </div>

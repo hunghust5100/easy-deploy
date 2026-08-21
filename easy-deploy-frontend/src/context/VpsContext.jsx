@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import * as serverService from '../services/serverService';
+import { useAuth } from './AuthContext';
 
 const VpsContext = createContext(null);
-
-export const DEFAULT_VPS_LIST = [];
 
 export const DEFAULT_SNIPPETS = [
   { id: '1', title: 'Status Containers', command: 'docker compose ps', category: 'Docker' },
@@ -14,21 +14,13 @@ export const DEFAULT_SNIPPETS = [
   { id: '7', title: 'Clean Unused Docker Data', command: 'docker system prune -f', category: 'Docker' },
 ];
 
-const LOCAL_VPS_KEY = 'easy_deploy_vps_list';
 const LOCAL_SNIPPET_KEY = 'easy_deploy_snippets';
 
 export function VpsProvider({ children }) {
-  const [vpsList, setVpsList] = useState(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_VPS_KEY);
-      if (!saved) return DEFAULT_VPS_LIST;
-      const parsed = JSON.parse(saved);
-      // Clean old mock data ('aws-prod', 'do-staging') if present in localStorage
-      return parsed.filter((p) => p.id !== 'aws-prod' && p.id !== 'do-staging');
-    } catch {
-      return DEFAULT_VPS_LIST;
-    }
-  });
+  const { currentUser } = useAuth();
+  const [vpsList, setVpsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [activeVpsId, setActiveVpsId] = useState(null);
 
   const [snippets, setSnippets] = useState(() => {
     try {
@@ -39,34 +31,94 @@ export function VpsProvider({ children }) {
     }
   });
 
-  const [activeVpsId, setActiveVpsId] = useState(vpsList[0]?.id || null);
+  // Tải danh sách VPS theo User đang đăng nhập
+  const refreshServers = useCallback(async (userObj) => {
+    const targetUser = userObj || currentUser;
+    if (!targetUser?.id) {
+      setVpsList([]);
+      setActiveVpsId(null);
+      return;
+    }
 
-  // Sync to LocalStorage
+    setLoading(true);
+    try {
+      const list = await serverService.getServers(targetUser.id);
+      setVpsList(list);
+      if (list.length > 0) {
+        setActiveVpsId((prev) => (list.some((s) => s.id === prev) ? prev : list[0].id));
+      } else {
+        setActiveVpsId(null);
+      }
+    } catch (err) {
+      console.warn('Không thể tải servers từ CSDL:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
-    localStorage.setItem(LOCAL_VPS_KEY, JSON.stringify(vpsList));
-  }, [vpsList]);
+    refreshServers(currentUser);
+  }, [currentUser, refreshServers]);
 
   useEffect(() => {
     localStorage.setItem(LOCAL_SNIPPET_KEY, JSON.stringify(snippets));
   }, [snippets]);
 
-  const saveVpsProfile = useCallback((profile) => {
-    setVpsList((prev) => {
-      const id = profile.id || `vps-${Date.now()}`;
-      const updatedProfile = { ...profile, id };
-      const existsIndex = prev.findIndex((p) => p.id === id);
+  const saveVpsProfile = useCallback(async (profile) => {
+    if (!currentUser?.id) {
+      throw new Error('Vui lòng đăng nhập để lưu máy chủ VPS');
+    }
+    try {
+      const isUUID = (str) =>
+        typeof str === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
 
-      if (existsIndex >= 0) {
-        const next = [...prev];
-        next[existsIndex] = updatedProfile;
-        return next;
+      const serverPayload = {
+        ...profile,
+        userId: currentUser.id,
+        sshPort: parseInt(profile.sshPort || profile.port) || 22,
+        sshUser: (profile.sshUser || profile.username || 'root').trim(),
+        defaultDeployPath: profile.defaultDeployPath || profile.deployPath || '/root',
+      };
+
+      if (profile.id && isUUID(profile.id.toString())) {
+        // Cập nhật
+        const updated = await serverService.updateServer(profile.id, serverPayload);
+        setVpsList((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+        return updated;
+      } else {
+        // Thêm mới
+        const created = await serverService.createServer(serverPayload);
+        setVpsList((prev) => [created, ...prev]);
+        setActiveVpsId(created.id);
+        return created;
       }
-      return [...prev, updatedProfile];
-    });
-  }, []);
+    } catch (err) {
+      console.error('Lỗi khi lưu server:', err);
+      throw err;
+    }
+  }, [currentUser]);
 
-  const deleteVpsProfile = useCallback((id) => {
-    setVpsList((prev) => prev.filter((p) => p.id !== id));
+  const deleteVpsProfile = useCallback(async (id) => {
+    try {
+      await serverService.deleteServer(id);
+      setVpsList((prev) => prev.filter((p) => p.id !== id));
+      if (activeVpsId === id) {
+        setActiveVpsId(null);
+      }
+    } catch (err) {
+      console.error('Lỗi khi xóa server:', err);
+      throw err;
+    }
+  }, [activeVpsId]);
+
+  const testConnection = useCallback(async (id) => {
+    try {
+      return await serverService.testServerConnection(id);
+    } catch (err) {
+      console.error('Lỗi test connection:', err);
+      return { connected: false, message: err.message };
+    }
   }, []);
 
   const addSnippet = useCallback((snippet) => {
@@ -86,11 +138,15 @@ export function VpsProvider({ children }) {
   return (
     <VpsContext.Provider
       value={{
+        currentUser,
         vpsList,
+        loading,
         activeVpsId,
         setActiveVpsId,
+        refreshServers,
         saveVpsProfile,
         deleteVpsProfile,
+        testConnection,
         snippets,
         addSnippet,
         deleteSnippet,

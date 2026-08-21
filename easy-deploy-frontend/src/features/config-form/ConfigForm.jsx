@@ -1,32 +1,31 @@
 import { useState } from 'react';
 import { useConfig } from '../../context/ConfigContext';
-import { TECH_STACKS, DB_TYPES, DEPLOY_MODES } from '../../constants/options';
+import ServiceSelector from './ServiceSelector';
 import {
   AppWindow,
   Database,
   Globe,
-  GitBranch,
-  Server,
   ShieldCheck,
   ChevronDown,
   Settings,
-  Layers,
-  Sparkles,
   Container,
   CheckCircle,
-  Hash,
-  Lock,
-  User,
-  Folder,
 } from 'lucide-react';
 import './ConfigForm.css';
 
 function ConfigForm() {
-  const { config, updateField } = useConfig();
+  const { config, updateField, enums } = useConfig();
   const [showAdvancedSSL, setShowAdvancedSSL] = useState(false);
+
+  const techStacks = enums?.techStacks || [];
+  const dbTypes = enums?.dbTypes || [];
+  const deployModes = enums?.deployModes || [];
 
   return (
     <div className="config-form">
+      {/* ── 0. Multi-Service / Module Selector ── */}
+      <ServiceSelector />
+
       {/* ── 1. App Info Card ── */}
       <div className="cf-card">
         <div className="cf-card__header">
@@ -34,14 +33,13 @@ function ConfigForm() {
             <AppWindow size={16} />
           </div>
           <div className="cf-card__title-group">
-            <h3 className="cf-card__title">1. Thông tin Ứng dụng & Nền tảng</h3>
-            <p className="cf-card__desc">Cấu hình tên project, tech stack nền tảng và cổng mạng (port mapping).</p>
+            <h3 className="cf-card__title">1. Thông Tin Ứng Dụng</h3>
           </div>
         </div>
 
         <div className="cf-grid">
           <div className="cf-field">
-            <label htmlFor="appName">Tên Ứng dụng (App Name)</label>
+            <label htmlFor="appName">Tên ứng dụng</label>
             <div className="cf-input-wrapper">
               <input
                 id="appName"
@@ -54,14 +52,22 @@ function ConfigForm() {
           </div>
 
           <div className="cf-field">
-            <label htmlFor="techStack">Nền tảng Công nghệ (Tech Stack)</label>
+            <label htmlFor="techStack">Nền tảng công nghệ</label>
             <div className="cf-input-wrapper">
               <select
                 id="techStack"
                 value={config.techStack}
-                onChange={(e) => updateField('techStack', e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateField('techStack', val);
+                  const selected = techStacks.find((t) => t.value === val);
+                  if (selected) {
+                    if (selected.defaultVersion) updateField('techVersion', selected.defaultVersion);
+                    if (selected.defaultPort) updateField('appPort', selected.defaultPort);
+                  }
+                }}
               >
-                {TECH_STACKS.map((t) => (
+                {techStacks.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
@@ -69,20 +75,20 @@ function ConfigForm() {
           </div>
 
           <div className="cf-field">
-            <label htmlFor="techVersion">Phiên bản Runtime</label>
+            <label htmlFor="techVersion">Phiên bản</label>
             <div className="cf-input-wrapper">
               <input
                 id="techVersion"
                 type="text"
                 value={config.techVersion}
                 onChange={(e) => updateField('techVersion', e.target.value)}
-                placeholder="e.g. 21, 20, 3.11"
+                placeholder="21, 20, 3.11..."
               />
             </div>
           </div>
 
           <div className="cf-field">
-            <label htmlFor="appPort">Cổng Container (App Port)</label>
+            <label htmlFor="appPort">Cổng container</label>
             <div className="cf-input-wrapper">
               <input
                 id="appPort"
@@ -94,7 +100,7 @@ function ConfigForm() {
           </div>
 
           <div className="cf-field">
-            <label htmlFor="hostPort">Cổng VPS Mở ngoài (Host Port)</label>
+            <label htmlFor="hostPort">Cổng VPS</label>
             <div className="cf-input-wrapper">
               <input
                 id="hostPort"
@@ -114,23 +120,19 @@ function ConfigForm() {
             <Container size={16} />
           </div>
           <div className="cf-card__title-group">
-            <h3 className="cf-card__title">2. Chiến lược Triển khai & Docker Hub Registry</h3>
-            <p className="cf-card__desc">Chọn phương thức build image trực tiếp trên VPS hoặc kéo từ Docker Hub.</p>
+            <h3 className="cf-card__title">2. Chiến Lược Triển Khai</h3>
           </div>
         </div>
 
         <div className="cf-strategy-selector">
-          {DEPLOY_MODES.map((mode) => {
-            const isSelected = (config.deployMode || 'remote_build') === mode.value;
+          {deployModes.map((mode) => {
+            const isSelected = (config.deployMode || 'REMOTE_BUILD').toUpperCase() === mode.value.toUpperCase();
             return (
               <div
                 key={mode.value}
                 className={`cf-strategy-card ${isSelected ? 'cf-strategy-card--active' : ''}`}
                 onClick={() => {
                   updateField('deployMode', mode.value);
-                  if (mode.value === 'registry_pull') {
-                    updateField('useDockerHub', true);
-                  }
                 }}
               >
                 <div className="cf-strategy-card__header">
@@ -141,13 +143,12 @@ function ConfigForm() {
                     </span>
                   )}
                 </div>
-                <p className="cf-strategy-card__desc">{mode.desc}</p>
               </div>
             );
           })}
         </div>
 
-        {((config.deployMode === 'registry_pull') || config.useDockerHub) && (
+        {((config.deployMode || '').toUpperCase() === 'REGISTRY_PULL') && (
           <div className="cf-grid cf-registry-box">
             <div className="cf-field">
               <label htmlFor="dockerHubUsername">Docker Hub Username *</label>
@@ -156,7 +157,7 @@ function ConfigForm() {
                   id="dockerHubUsername"
                   type="text"
                   value={config.dockerHubUsername || ''}
-                  placeholder="e.g. mydockerhubuser"
+                  placeholder="username"
                   onChange={(e) => {
                     updateField('dockerHubUsername', e.target.value);
                     updateField('dockerHubUser', e.target.value);
@@ -166,37 +167,28 @@ function ConfigForm() {
             </div>
 
             <div className="cf-field">
-              <label htmlFor="dockerImageTag">Docker Image Tag</label>
+              <label htmlFor="dockerImageTag">Image Tag</label>
               <div className="cf-input-wrapper">
                 <input
                   id="dockerImageTag"
                   type="text"
                   value={config.dockerImageTag || 'latest'}
-                  placeholder="e.g. latest, v1.0.0"
+                  placeholder="latest, v1.0.0"
                   onChange={(e) => updateField('dockerImageTag', e.target.value)}
                 />
               </div>
             </div>
 
             <div className="cf-field">
-              <label htmlFor="dockerHubToken">Access Token / Password (Tùy chọn)</label>
+              <label htmlFor="dockerHubToken">Access Token / Password</label>
               <div className="cf-input-wrapper">
                 <input
                   id="dockerHubToken"
                   type="password"
                   value={config.dockerHubToken || ''}
-                  placeholder="dckr_pat_xxxxx"
+                  placeholder="••••••••••••"
                   onChange={(e) => updateField('dockerHubToken', e.target.value)}
                 />
-              </div>
-            </div>
-
-            <div className="cf-field cf-field--full">
-              <div className="cf-docker-preview">
-                <span className="cf-docker-preview__label">📦 Image Target:</span>
-                <code className="cf-docker-preview__code">
-                  docker.io/{config.dockerHubUsername || 'username'}/{config.appName}:{config.dockerImageTag || 'latest'}
-                </code>
               </div>
             </div>
           </div>
@@ -210,8 +202,7 @@ function ConfigForm() {
             <Database size={16} />
           </div>
           <div className="cf-card__title-group">
-            <h3 className="cf-card__title">3. Cơ sở Dữ liệu & Caching</h3>
-            <p className="cf-card__desc">Tự động cấu hình Docker container cho database kèm persistent volume lưu trữ.</p>
+            <h3 className="cf-card__title">3. Cơ Sở Dữ Liệu</h3>
           </div>
         </div>
 
@@ -224,7 +215,7 @@ function ConfigForm() {
                 value={config.dbType}
                 onChange={(e) => updateField('dbType', e.target.value)}
               >
-                {DB_TYPES.map((d) => (
+                {dbTypes.map((d) => (
                   <option key={d.value} value={d.value}>{d.label}</option>
                 ))}
               </select>
@@ -245,7 +236,7 @@ function ConfigForm() {
                 </div>
               </div>
               <div className="cf-field">
-                <label htmlFor="dbUser">Username</label>
+                <label htmlFor="dbUser">Tài khoản DB</label>
                 <div className="cf-input-wrapper">
                   <input
                     id="dbUser"
@@ -256,7 +247,7 @@ function ConfigForm() {
                 </div>
               </div>
               <div className="cf-field">
-                <label htmlFor="dbPass">Password</label>
+                <label htmlFor="dbPass">Mật khẩu DB</label>
                 <div className="cf-input-wrapper">
                   <input
                     id="dbPass"
@@ -267,7 +258,7 @@ function ConfigForm() {
                 </div>
               </div>
               <div className="cf-field">
-                <label htmlFor="dbPort">Cổng Database</label>
+                <label htmlFor="dbPort">Cổng CSDL</label>
                 <div className="cf-input-wrapper">
                   <input
                     id="dbPort"
@@ -290,7 +281,6 @@ function ConfigForm() {
           </div>
           <div className="cf-card__title-group">
             <h3 className="cf-card__title">4. Nginx Reverse Proxy</h3>
-            <p className="cf-card__desc">Sinh file cấu hình Nginx tối ưu chuyển tiếp cổng, nén gzip và bảo mật headers.</p>
           </div>
         </div>
 
@@ -298,7 +288,6 @@ function ConfigForm() {
           <div className="cf-field cf-field--toggle">
             <div>
               <span className="cf-toggle-label">Bật Nginx Reverse Proxy</span>
-              <span className="cf-toggle-desc">Tạo file <code>nginx.conf</code> tiêu chuẩn production</span>
             </div>
             <button
               id="enableNginx"
@@ -314,119 +303,36 @@ function ConfigForm() {
 
           {config.enableNginx && (
             <div className="cf-field cf-field--full">
-              <label htmlFor="domainName">Tên miền Nginx Reverse Proxy (Domain Name)</label>
+              <label htmlFor="domainName">Tên miền (Domain)</label>
               <div className="cf-input-wrapper">
                 <input
                   id="domainName"
                   type="text"
                   value={config.domainName}
-                  placeholder="e.g. localhost hoặc api.yourdomain.com"
+                  placeholder="localhost hoặc domain.com"
                   onChange={(e) => updateField('domainName', e.target.value)}
                 />
               </div>
-              <p className="cf-field-hint">
-                🌐 Tên miền để Nginx lắng nghe và chuyển tiếp traffic (directive <code>server_name</code>).
-              </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── 5. CI/CD GitHub Actions Card ── */}
-      <div className="cf-card">
-        <div className="cf-card__header">
-          <div className="cf-card__icon-wrap">
-            <GitBranch size={16} />
-          </div>
-          <div className="cf-card__title-group">
-            <h3 className="cf-card__title">5. CI/CD Pipeline (GitHub Actions)</h3>
-            <p className="cf-card__desc">Sinh workflow <code>.github/workflows/deploy-github.yml</code> tự động build & SSH deploy khi push code.</p>
-          </div>
-        </div>
-
-        <div className="cf-grid">
-          <div className="cf-field cf-field--toggle">
-            <div>
-              <span className="cf-toggle-label">Bật GitHub Actions CI/CD</span>
-              <span className="cf-toggle-desc">Tự động kích hoạt khi có commit mới lên Git branch</span>
-            </div>
-            <button
-              id="enableCicd"
-              type="button"
-              role="switch"
-              aria-checked={config.enableCicd}
-              className={`cf-toggle ${config.enableCicd ? 'cf-toggle--on' : ''}`}
-              onClick={() => updateField('enableCicd', !config.enableCicd)}
-            >
-              <span className="cf-toggle__thumb" />
-            </button>
-          </div>
-
-          {config.enableCicd && (
-            <>
-              <div className="cf-field">
-                <label htmlFor="gitBranch">Git Branch</label>
-                <div className="cf-input-wrapper">
-                  <input
-                    id="gitBranch"
-                    type="text"
-                    value={config.gitBranch || 'main'}
-                    placeholder="e.g. main, master"
-                    onChange={(e) => updateField('gitBranch', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="cf-field">
-                <label htmlFor="dockerHubUser">Docker Hub Username (cho CI/CD)</label>
-                <div className="cf-input-wrapper">
-                  <input
-                    id="dockerHubUser"
-                    type="text"
-                    value={config.dockerHubUser || config.dockerHubUsername || ''}
-                    placeholder="Username Docker Hub"
-                    onChange={(e) => {
-                      updateField('dockerHubUser', e.target.value);
-                      if (!config.dockerHubUsername) updateField('dockerHubUsername', e.target.value);
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="cf-field">
-                <label htmlFor="deployPath">Thư mục Deploy trên VPS</label>
-                <div className="cf-input-wrapper">
-                  <input
-                    id="deployPath"
-                    type="text"
-                    value={config.deployPath || ''}
-                    placeholder="e.g. /root/my-app"
-                    onChange={(e) => updateField('deployPath', e.target.value)}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ── 6. Bootstrap Server Script & SSL Card ── */}
+      {/* ── 5. Bootstrap Server Script & SSL Card ── */}
       <div className="cf-card">
         <div className="cf-card__header">
           <div className="cf-card__icon-wrap">
             <ShieldCheck size={16} />
           </div>
           <div className="cf-card__title-group">
-            <h3 className="cf-card__title">6. Bootstrap Server & Bảo mật SSL Miễn Phí</h3>
-            <p className="cf-card__desc">Sinh script <code>setup-server.sh</code> tự động cài đặt môi trường từ A-Z cho máy chủ VPS mới tinh.</p>
+            <h3 className="cf-card__title">5. Cài Đặt Hạ Tầng VPS</h3>
           </div>
         </div>
 
         <div className="cf-grid">
           <div className="cf-field cf-field--toggle cf-field--full">
             <div>
-              <span className="cf-toggle-label">Sinh script Bootstrap Server (setup-server.sh)</span>
-              <span className="cf-toggle-desc">Tự động cài đặt Docker, Nginx, SSL và bật tường lửa UFW</span>
+              <span className="cf-toggle-label">Sinh script cài đặt server (setup-server.sh)</span>
             </div>
             <button
               id="enableServerSetup"
@@ -450,8 +356,7 @@ function ConfigForm() {
                     onChange={(e) => updateField('installDocker', e.target.checked)}
                   />
                   <div className="cf-checkbox-text">
-                    <span className="cf-checkbox-title">🐳 Cài đặt Docker Engine & Docker Compose V2</span>
-                    <span className="cf-checkbox-desc">Dành cho VPS trắng chưa cài đặt runtime container</span>
+                    <span className="cf-checkbox-title">🐳 Cài đặt Docker & Compose V2</span>
                   </div>
                 </label>
 
@@ -462,8 +367,7 @@ function ConfigForm() {
                     onChange={(e) => updateField('installNginx', e.target.checked)}
                   />
                   <div className="cf-checkbox-text">
-                    <span className="cf-checkbox-title">🌐 Cài đặt Nginx Host & Nạp File Config Reverse Proxy</span>
-                    <span className="cf-checkbox-desc">Tự động sao chép nginx.conf vào /etc/nginx/sites-available</span>
+                    <span className="cf-checkbox-title">🌐 Cài đặt Nginx Host</span>
                   </div>
                 </label>
 
@@ -474,8 +378,7 @@ function ConfigForm() {
                     onChange={(e) => updateField('installCertbot', e.target.checked)}
                   />
                   <div className="cf-checkbox-text">
-                    <span className="cf-checkbox-title">🔒 Cài đặt Chứng chỉ SSL miễn phí (Let's Encrypt / Certbot)</span>
-                    <span className="cf-checkbox-desc">Tự động cấu hình HTTPS và cơ chế tự động gia hạn chứng chỉ</span>
+                    <span className="cf-checkbox-title">🔒 Cài đặt SSL Let's Encrypt / Certbot</span>
                   </div>
                 </label>
 
@@ -486,8 +389,7 @@ function ConfigForm() {
                     onChange={(e) => updateField('setupFirewall', e.target.checked)}
                   />
                   <div className="cf-checkbox-text">
-                    <span className="cf-checkbox-title">🛡️ Kích hoạt UFW Firewall (Mở cổng 80, 443, 22)</span>
-                    <span className="cf-checkbox-desc">Bảo vệ VPS chống quét cổng độc hại</span>
+                    <span className="cf-checkbox-title">🛡️ Bật UFW Firewall (80, 443, 22)</span>
                   </div>
                 </label>
               </div>
@@ -496,8 +398,7 @@ function ConfigForm() {
                 <>
                   <div className="cf-field cf-field--toggle cf-field--full" style={{ marginTop: 'var(--space-2)' }}>
                     <div>
-                      <span className="cf-toggle-label">🌍 Dùng sslip.io — Auto-Domain từ IP VPS</span>
-                      <span className="cf-toggle-desc">Tự động tạo domain HTTPS dạng <code>YOUR_IP.sslip.io</code> không cần mua domain</span>
+                      <span className="cf-toggle-label">Tự động tạo tên miền từ IP (sslip.io)</span>
                     </div>
                     <button
                       id="useSslipIo"
@@ -511,22 +412,15 @@ function ConfigForm() {
                     </button>
                   </div>
 
-                  {config.useSslipIo ? (
-                    <div className="cf-sslip-info cf-field--full">
-                      <p>
-                        ✅ Hệ thống sẽ tự động detect IP VPS và tạo domain dạng <code>YOUR_IP.sslip.io</code>. 
-                        Không cần mua tên miền hay cấu hình bản ghi DNS thủ công.
-                      </p>
-                    </div>
-                  ) : (
+                  {!config.useSslipIo && (
                     <div className="cf-field cf-field--full">
-                      <label htmlFor="setupDomain">Tên miền (Domain Name)</label>
+                      <label htmlFor="setupDomain">Tên miền</label>
                       <div className="cf-input-wrapper">
                         <input
                           id="setupDomain"
                           type="text"
                           value={config.domainName || ''}
-                          placeholder="e.g. api.yourdomain.com"
+                          placeholder="api.yourdomain.com"
                           onChange={(e) => updateField('domainName', e.target.value)}
                         />
                       </div>
@@ -541,13 +435,13 @@ function ConfigForm() {
                       onClick={() => setShowAdvancedSSL(!showAdvancedSSL)}
                     >
                       <Settings size={13} />
-                      <span>Tùy chọn nâng cao SSL</span>
+                      <span>Email quản trị SSL</span>
                       <ChevronDown size={13} className={showAdvancedSSL ? 'cf-chevron--open' : ''} />
                     </button>
 
                     {showAdvancedSSL && (
                       <div className="cf-field" style={{ marginTop: '10px' }}>
-                        <label htmlFor="adminEmail">Email Admin SSL (nhận thông báo gia hạn chứng chỉ)</label>
+                        <label htmlFor="adminEmail">Email nhận thông báo gia hạn</label>
                         <div className="cf-input-wrapper">
                           <input
                             id="adminEmail"

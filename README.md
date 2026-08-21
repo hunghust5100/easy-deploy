@@ -6,11 +6,12 @@
 
 ## 🌟 Tính năng Nổi bật
 
-* 🔍 **Smart Tech Stack Detector:** Tự động phân tích cây thư mục mã nguồn (Local hoặc qua GitHub URL) để nhận diện ngôn ngữ và framework (Java/Spring Boot, Node.js/Express, Python, React, Vite, Next.js...).
+* 🔍 **Smart Multi-Module Tech Stack Detector:** Tự động phân tích cây thư mục mã nguồn (Local hoặc qua GitHub URL) để nhận diện tất cả các packages/modules (Frontend React/Vite, Backend Java/Spring Boot, Python, Go, Node.js...).
+* 🧩 **Interactive Service Selector:** Cho phép người dùng trực quan lựa chọn và tùy biến cấu hình triển khai riêng cho từng module (port, container name, biến môi trường) hoặc triển khai toàn bộ hệ thống Full-stack chỉ với 1 cú click.
 * 🛠️ **DevOps Config Generator:** Sinh bộ file cấu hình tiêu chuẩn sản xuất:
-  * `Dockerfile` tối ưu multi-stage build.
-  * `docker-compose.yml` ghép nối ứng dụng với các dịch vụ bổ trợ (PostgreSQL, MySQL, Redis, Nginx).
-  * `nginx.conf` cấu hình Reverse Proxy, caching và đường truyền bảo mật.
+  * `Dockerfile` tối ưu multi-stage build độc lập cho từng module.
+  * `docker-compose.yml` ghép nối đa dịch vụ ứng dụng với các dịch vụ bổ trợ (PostgreSQL, MySQL, Redis, Nginx Gateway).
+  * `nginx.conf` cấu hình Smart Reverse Proxy tự động định tuyến `/` sang Frontend và `/api` sang Backend.
   * `.github/workflows/deploy-github.yml` quy trình CI/CD hoàn chỉnh tự động build & push Docker Image và SSH deploy lên VPS.
 * 🚀 **1-Click SSH Deploy:** Tải file cấu hình, kết nối SSH/SFTP lên máy chủ từ xa, khởi chạy container và stream log thời gian thực về giao diện Web qua WebSocket.
 * 💻 **Web SSH Terminal:** Trình quản lý Terminal tương tác trực tiếp trên trình duyệt tích hợp `@xterm/xterm`.

@@ -14,9 +14,9 @@ import {
   Check,
   Send,
   Server,
-  Sparkles,
 } from 'lucide-react';
 import { useVps } from '../../context/VpsContext';
+import { getWebSocketUrl } from '../../utils/wsHelper';
 import '@xterm/xterm/css/xterm.css';
 import './WebTerminal.css';
 
@@ -37,8 +37,8 @@ function WebTerminal() {
 
   const [form, setForm] = useState({
     host: vpsList[0]?.host || '',
-    port: vpsList[0]?.port || 22,
-    username: vpsList[0]?.username || '',
+    port: vpsList[0]?.sshPort || vpsList[0]?.port || 22,
+    username: vpsList[0]?.sshUser || vpsList[0]?.username || '',
     password: vpsList[0]?.password || '',
   });
 
@@ -65,8 +65,8 @@ function WebTerminal() {
     if (selected) {
       setForm({
         host: selected.host || '',
-        port: selected.port || 22,
-        username: selected.username || '',
+        port: selected.sshPort || selected.port || 22,
+        username: selected.sshUser || selected.username || '',
         password: selected.password || '',
       });
     }
@@ -82,8 +82,8 @@ function WebTerminal() {
         id: selectedVpsId || undefined,
         name,
         host: form.host,
-        port: form.port,
-        username: form.username,
+        sshPort: form.port,
+        sshUser: form.username,
         password: form.password,
       });
       alert(`Đã lưu máy chủ "${name}" vào danh sách!`);
@@ -131,8 +131,7 @@ function WebTerminal() {
     const term = termInstanceRef.current;
 
     // 2. Mở kết nối WebSocket tới Backend Spring Boot
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8088/ws/ssh`;
+    const wsUrl = getWebSocketUrl('/ws/ssh');
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -228,7 +227,6 @@ function WebTerminal() {
             </div>
             <div>
               <h3 className="wt-form__title">Web SSH Terminal — Quản trị VPS</h3>
-              <p className="wt-form__subtitle">Kết nối shell tương tác trực tiếp trên trình duyệt tới bất kỳ máy chủ VPS nào.</p>
             </div>
           </div>
 

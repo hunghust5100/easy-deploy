@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { X, Copy, Check, ShieldCheck, Globe, Key, Server, FileText, ExternalLink, HelpCircle, ArrowRight } from 'lucide-react';
+import { X, Copy, Check, ShieldCheck, Globe, Server, FileText, ExternalLink, HelpCircle } from 'lucide-react';
 import { useConfig } from '../../context/ConfigContext';
 import './ManualDeployModal.css';
 
 function ManualDeployModal({ isOpen, onClose }) {
   const { config } = useConfig();
-  const [activeTab, setActiveTab] = useState('github');
+  const [activeTab, setActiveTab] = useState('vps');
   const [copiedKey, setCopiedKey] = useState(null);
 
   if (!isOpen) return null;
@@ -19,18 +19,9 @@ function ManualDeployModal({ isOpen, onClose }) {
   };
 
   const tabs = [
-    { id: 'github', label: '1. GitHub Secrets (CI/CD)', icon: Key },
-    { id: 'vercel', label: '2. Vercel (Frontend)', icon: Globe },
-    { id: 'vps', label: '3. VPS Firewall & DNS', icon: Server },
-    { id: 'env', label: '4. Biến Bảo mật (.env)', icon: FileText },
-  ];
-
-  const githubSecrets = [
-    { name: 'DOCKERHUB_USERNAME', value: 'my-dockerhub-user', desc: 'Tên tài khoản Docker Hub dùng để lưu trữ Container Image' },
-    { name: 'DOCKERHUB_TOKEN', value: 'dckr_pat_xxxxx', desc: 'Personal Access Token từ Docker Hub Account Settings' },
-    { name: 'SERVER_HOST', value: '103.179.x.x', desc: 'Địa chỉ IP Public hoặc Domain đại diện cho VPS của bạn' },
-    { name: 'SERVER_USER', value: 'root', desc: 'Tên người dùng SSH trên VPS (Mặc định: root)' },
-    { name: 'SERVER_PASSWORD', value: '••••••••', desc: 'Mật khẩu SSH (hoặc dùng SERVER_SSH_KEY cho RSA Key)' },
+    { id: 'vps', label: '1. VPS Firewall & DNS', icon: Server },
+    { id: 'env', label: '2. Biến Bảo mật (.env)', icon: FileText },
+    { id: 'vercel', label: '3. Vercel (Frontend)', icon: Globe },
   ];
 
   const envExample = `# File Biến Môi trường Production (.env trên VPS)
@@ -89,38 +80,7 @@ JWT_SECRET=super_secret_jwt_key_change_in_production_32chars
             </span>
           </div>
 
-          {/* TAB 1: GITHUB SECRETS */}
-          {activeTab === 'github' && (
-            <div className="md-tab-content">
-              <div className="md-section-header">
-                <div>
-                  <h4 className="md-section-title">Khóa Bảo mật Repository (GitHub Actions Secrets)</h4>
-                  <p className="md-desc">
-                    Vào GitHub Repository &gt; <code>Settings</code> &gt; <code>Secrets and variables</code> &gt; <code>Actions</code> &gt; <code>New repository secret</code>:
-                  </p>
-                </div>
-              </div>
-
-              <div className="md-secrets-grid">
-                {githubSecrets.map((s) => (
-                  <div key={s.name} className="md-secret-card">
-                    <div className="md-secret-card__top">
-                      <code className="md-secret-name">{s.name}</code>
-                      <button
-                        type="button"
-                        className="md-copy-btn"
-                        onClick={() => handleCopy(s.name, s.name)}
-                        title="Sao chép tên biến"
-                      >
-                        {copiedKey === s.name ? <Check size={14} className="copied text-success" /> : <Copy size={14} />}
-                      </button>
-                    </div>
-                    <span className="md-secret-desc">{s.desc}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* TAB 1: VPS FIREWALL & DNS */}
 
           {/* TAB 2: VERCEL FRONTEND */}
           {activeTab === 'vercel' && (

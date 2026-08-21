@@ -4,6 +4,25 @@ server:
 spring:
   application:
     name: easy-deploy-web
+  datasource:
+    url: jdbc:h2:file:./data/easydeploydb;AUTO_SERVER=TRUE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
 
 logging:
   level:

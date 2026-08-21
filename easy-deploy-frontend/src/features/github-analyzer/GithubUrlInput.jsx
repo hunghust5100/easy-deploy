@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { Search, Loader2, CheckCircle2, AlertCircle, Sparkles, ArrowRight } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, AlertCircle, ArrowRight, Settings, Rocket, FileCode2 } from 'lucide-react';
 import { analyzeRepo } from '../../services/githubService';
 import { useConfig } from '../../context/ConfigContext';
 import './GithubUrlInput.css';
 
 const QUICK_PRESETS = [
-  { label: 'EasyDeploy Repo (Java Gradle)', url: 'https://github.com/hunghust5100/easy-deploy' },
-  { label: 'Express Demo (Node.js)', url: 'https://github.com/expressjs/express' },
+  { label: 'EasyDeploy (Java)', url: 'https://github.com/hunghust5100/easy-deploy' },
+  { label: 'Express (Node.js)', url: 'https://github.com/expressjs/express' },
 ];
 
 function GithubUrlInput() {
-  const { applyGithubResult } = useConfig();
+  const { applyGithubResult, setGeneratorStep } = useConfig();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null); // 'success' | 'error'
+  const [status, setStatus] = useState(null);
   const [message, setMessage] = useState('');
   const [detectedStack, setDetectedStack] = useState(null);
 
@@ -31,14 +31,16 @@ function GithubUrlInput() {
       if (data.suggestedConfig) {
         await applyGithubResult(data.suggestedConfig);
         setStatus('success');
-        setMessage(`Đã phân tích thành công ${data.scannedFilesCount} files! Cấu hình đã được nạp tự động vào form.`);
+        const svcCount = data.suggestedConfig?.services?.length || 0;
+        const svcMsg = svcCount > 1 ? ` — Tìm thấy ${svcCount} modules/packages trong dự án.` : '';
+        setMessage(`Phân tích thành công ${data.scannedFilesCount} tệp tin${svcMsg}`);
         if (data.suggestedConfig?.techStack) {
           setDetectedStack(data.suggestedConfig.techStack);
         }
       }
     } catch (err) {
       setStatus('error');
-      setMessage(err.response?.data?.error || err.message || 'Không thể phân tích repository. Vui lòng kiểm tra lại URL.');
+      setMessage(err.friendlyMessage || err.response?.data?.error || err.message || 'Không thể phân tích repository. Vui lòng kiểm tra lại URL.');
     } finally {
       setLoading(false);
     }
@@ -55,17 +57,17 @@ function GithubUrlInput() {
     if (e.key === 'Enter') handleAnalyze();
   };
 
+  const scrollToSection = (sectionId) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="github-hero">
       <div className="github-hero__header">
-        <div className="github-hero__badge">
-          <Sparkles size={13} />
-          <span>Smart Tech Stack Detector</span>
-        </div>
-        <h2 className="github-hero__title">Tự động Phân tích Dự án từ GitHub</h2>
-        <p className="github-hero__subtitle">
-          Nhập đường dẫn GitHub Repository (Public) để hệ thống tự động quét nhận diện Framework, Port, Database và sinh file DevOps tối ưu.
-        </p>
+        <h2 className="github-hero__title">Tự Động Nhận Diện Từ GitHub</h2>
       </div>
 
       <div className="github-hero__search-card">
@@ -91,13 +93,13 @@ function GithubUrlInput() {
           disabled={loading || !url.trim()}
         >
           {loading ? <Loader2 size={16} className="spin" /> : <Search size={16} />}
-          <span>{loading ? 'Đang phân tích...' : 'Phân tích ngay'}</span>
+          <span>{loading ? 'Đang quét...' : 'Phân tích'}</span>
         </button>
       </div>
 
       {/* Quick Presets */}
       <div className="github-presets">
-        <span className="github-presets__label">Gợi ý thử nhanh:</span>
+        <span className="github-presets__label">Mẫu thử:</span>
         {QUICK_PRESETS.map((p) => (
           <button
             key={p.url}
@@ -112,22 +114,52 @@ function GithubUrlInput() {
         ))}
       </div>
 
-      {/* Status Feedback */}
+      {/* Status Feedback & Action Jump Bar */}
       {status && (
-        <div className={`github-input__status github-input__status--${status}`}>
-          <div className="github-status-left">
-            {status === 'success' ? (
-              <CheckCircle2 size={18} className="status-icon" />
-            ) : (
-              <AlertCircle size={18} className="status-icon" />
+        <div className={`github-input__status-container github-input__status--${status}`}>
+          <div className="github-input__status-top">
+            <div className="github-status-left">
+              {status === 'success' ? (
+                <CheckCircle2 size={18} className="status-icon" />
+              ) : (
+                <AlertCircle size={18} className="status-icon" />
+              )}
+              <span>{message}</span>
+            </div>
+
+            {detectedStack && (
+              <div className="github-detected-stack">
+                <span>Công nghệ:</span>
+                <code>{detectedStack}</code>
+              </div>
             )}
-            <span>{message}</span>
           </div>
 
-          {detectedStack && (
-            <div className="github-detected-stack">
-              <span>Tech Stack:</span>
-              <code>{detectedStack}</code>
+          {/* Quick Action Navigation after scan */}
+          {status === 'success' && (
+            <div className="github-quick-actions">
+              <button
+                type="button"
+                className="github-action-btn github-action-btn--config"
+                onClick={() => scrollToSection('config-section')}
+              >
+                <Settings size={14} />
+                <span>Chỉnh Sửa Cấu Hình Bên Dưới</span>
+                <ArrowRight size={12} />
+              </button>
+
+              <button
+                type="button"
+                className="github-action-btn github-action-btn--deploy"
+                onClick={() => {
+                  setGeneratorStep(2);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                <Rocket size={14} />
+                <span>Tiếp Tục: Xem File & Deploy</span>
+                <ArrowRight size={12} />
+              </button>
             </div>
           )}
         </div>

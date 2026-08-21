@@ -3,10 +3,10 @@ package com.easydeploy.web.controller;
 import com.easydeploy.core.detector.TechStackRuleEngine;
 import com.easydeploy.core.model.ProjectConfig;
 import com.easydeploy.core.scanner.GithubTreeScanner;
+import com.easydeploy.core.scanner.GithubTreeScanner.ScanResult;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -29,16 +29,17 @@ public class GithubAnalyzerController {
         }
 
         try {
-            List<String> filePaths = githubTreeScanner.scanGithubRepository(repoUrl);
-            ProjectConfig config = ruleEngine.analyzeFilePaths(filePaths);
+            ScanResult scanResult = githubTreeScanner.scanGithubRepositoryWithDetails(repoUrl);
+            ProjectConfig config = ruleEngine.analyzeGithubScan(scanResult);
 
-            config.setRepoUrl(repoUrl);
+            GithubTreeScanner.ParsedGithubUrl parsed = githubTreeScanner.parseGithubUrlDetailed(repoUrl);
+            config.setRepoUrl(parsed.getCleanCloneUrl());
+            config.setGitBranch(parsed.getBranch() != null ? parsed.getBranch() : scanResult.getDefaultBranch());
 
             // Extract repo name and owner from repoUrl
             try {
-                String[] ownerAndRepo = githubTreeScanner.parseGithubUrl(repoUrl);
-                String owner = ownerAndRepo[0];
-                String repo = ownerAndRepo[1];
+                String owner = scanResult.getOwner();
+                String repo = scanResult.getRepo();
                 String cleanAppName = repo.toLowerCase().replaceAll("[^a-z0-9_-]", "-");
                 config.setAppName(cleanAppName);
                 config.setDockerHubUser(owner);
@@ -48,7 +49,7 @@ public class GithubAnalyzerController {
 
             return ResponseEntity.ok(Map.of(
                 "repoUrl", repoUrl,
-                "scannedFilesCount", filePaths.size(),
+                "scannedFilesCount", scanResult.getFilePaths().size(),
                 "suggestedConfig", config
             ));
         } catch (Exception e) {

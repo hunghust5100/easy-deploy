@@ -11,6 +11,8 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.util.UUID;
+
 @Component
 public class DeployWebSocketHandler extends TextWebSocketHandler {
 
@@ -36,8 +38,29 @@ public class DeployWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
 
+            UUID projectId = null;
+            if (root.hasNonNull("projectId") && !root.get("projectId").asText().trim().isEmpty()) {
+                try {
+                    projectId = UUID.fromString(root.get("projectId").asText().trim());
+                } catch (Exception ignored) {}
+            }
+
+            UUID serverId = null;
+            if (root.hasNonNull("serverId") && !root.get("serverId").asText().trim().isEmpty()) {
+                try {
+                    serverId = UUID.fromString(root.get("serverId").asText().trim());
+                } catch (Exception ignored) {}
+            }
+
+            UUID userId = null;
+            if (root.hasNonNull("userId") && !root.get("userId").asText().trim().isEmpty()) {
+                try {
+                    userId = UUID.fromString(root.get("userId").asText().trim());
+                } catch (Exception ignored) {}
+            }
+
             // Kích hoạt quy trình 1-Click Deploy trong background
-            deploymentService.execute1ClickDeploy(config, credentials, session);
+            deploymentService.execute1ClickDeploy(config, credentials, session, projectId, serverId, userId);
 
         } catch (Exception e) {
             log.error("Lỗi khi xử lý request 1-Click Deploy", e);

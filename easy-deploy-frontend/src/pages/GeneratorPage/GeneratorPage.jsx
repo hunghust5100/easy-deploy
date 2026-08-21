@@ -24,11 +24,14 @@ import {
   Key,
   Container,
   Code2,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
 } from 'lucide-react';
 import './GeneratorPage.css';
 
 function GeneratorPage() {
-  const { config } = useConfig();
+  const { config, saveProjectToDb, activeProjectId, generatorStep, setGeneratorStep } = useConfig();
   const { vpsList, saveVpsProfile, deleteVpsProfile } = useVps();
   const [showManualModal, setShowManualModal] = useState(false);
   const [showScriptPreview, setShowScriptPreview] = useState(true);
@@ -36,6 +39,19 @@ function GeneratorPage() {
   const [authMethod, setAuthMethod] = useState('password'); // 'password' | 'key'
   const [selectedVpsId, setSelectedVpsId] = useState('');
   const [cleanServerBeforeDeploy, setCleanServerBeforeDeploy] = useState(false);
+  const [savingProject, setSavingProject] = useState(false);
+
+  const handleSaveProject = async () => {
+    setSavingProject(true);
+    try {
+      const saved = await saveProjectToDb();
+      alert(`Đã lưu dự án "${saved.appName}" vào CSDL H2 thành công!`);
+    } catch (err) {
+      alert('Lỗi khi lưu dự án: ' + err.message);
+    } finally {
+      setSavingProject(false);
+    }
+  };
 
   const appName = config.appName || 'my-app';
 
@@ -74,15 +90,15 @@ function GeneratorPage() {
     if (selected) {
       setVpsForm({
         host: selected.host || '',
-        port: selected.port || 22,
-        username: selected.username || 'root',
+        port: selected.sshPort || selected.port || 22,
+        username: selected.sshUser || selected.username || 'root',
         password: selected.password || '',
         keyFilePath: selected.keyFilePath || '~/.ssh/id_rsa',
-        deployPath: selected.deployPath || `/root/${appName}`,
+        deployPath: selected.defaultDeployPath || selected.deployPath || `/root/${appName}`,
       });
 
-      if (selected.authMethod) {
-        setAuthMethod(selected.authMethod);
+      if (selected.authType === 'KEY' || selected.authMethod === 'key') {
+        setAuthMethod('key');
       } else if (selected.keyFilePath && !selected.password) {
         setAuthMethod('key');
       } else {
@@ -107,19 +123,17 @@ function GeneratorPage() {
     );
 
     if (name && name.trim()) {
-      const savedId = selectedVpsId || `vps-${Date.now()}`;
+      const savedId = selectedVpsId || undefined;
       saveVpsProfile({
         id: savedId,
         name: name.trim(),
         host: vpsForm.host.trim(),
-        port: parseInt(vpsForm.port) || 22,
-        username: (vpsForm.username || 'root').trim(),
+        sshPort: parseInt(vpsForm.port) || 22,
+        sshUser: (vpsForm.username || 'root').trim(),
         password: vpsForm.password || '',
-        authMethod: authMethod,
-        keyFilePath: authMethod === 'key' ? (vpsForm.keyFilePath || '~/.ssh/id_rsa') : '',
-        deployPath: vpsForm.deployPath || `/root/${appName}`,
+        authType: authMethod === 'key' ? 'KEY' : 'PASSWORD',
+        defaultDeployPath: vpsForm.deployPath || `/root/${appName}`,
       });
-      setSelectedVpsId(savedId);
       alert(`Đã lưu máy chủ "${name.trim()}" (${vpsForm.host.trim()}) vào danh sách!`);
     }
   };
@@ -153,9 +167,10 @@ function GeneratorPage() {
     }
   }
 
-  scriptSteps.push(`\n# ${config.enableServerSetup ? '4' : '3'}. Khởi chạy Docker Compose App Containers (Mode: ${config.deployMode || 'remote_build'})`);
-  if (config.deployMode === 'registry_pull') {
-    if (config.useDockerHub && config.dockerHubUsername) {
+  const isRegistryPull = (config.deployMode || '').toUpperCase() === 'REGISTRY_PULL';
+  scriptSteps.push(`\n# ${config.enableServerSetup ? '4' : '3'}. Khởi chạy Docker Compose App Containers (Mode: ${isRegistryPull ? 'REGISTRY_PULL' : 'REMOTE_BUILD'})`);
+  if (isRegistryPull) {
+    if (config.dockerHubUsername) {
       scriptSteps.push(`echo "${config.dockerHubToken || '••••••••'}" | docker login -u "${config.dockerHubUsername}" --password-stdin`);
     }
     const fullImg = `${config.dockerHubUsername || 'username'}/${appName}:${config.dockerImageTag || 'latest'}`;
@@ -175,281 +190,404 @@ function GeneratorPage() {
 
   return (
     <div className="generator-page">
-      {/* ── Step 1: GitHub URL ── */}
-      <section className="gp-section">
-        <GithubUrlInput />
-      </section>
+      {/* ── Stepper Navigation Bar ── */}
+      <div className="gp-stepper">
+        <button
+          type="button"
+          className={`gp-stepper__item ${generatorStep === 1 ? 'gp-stepper__item--active' : 'gp-stepper__item--done'}`}
+          onClick={() => {
+            setGeneratorStep(1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <div className="gp-stepper__badge">
+            {generatorStep > 1 ? <CheckCircle2 size={16} /> : <span>1</span>}
+          </div>
+          <div className="gp-stepper__info">
+            <span className="gp-stepper__title">1. Quét & Cấu Hình</span>
+            <span className="gp-stepper__desc">Nhận diện GitHub & tham số dịch vụ</span>
+          </div>
+        </button>
 
-      {/* ── Divider ── */}
-      <div className="gp-divider">
-        <span>Hoặc Tự Cấu Hình Bên Dưới</span>
+        <div className="gp-stepper__divider">
+          <ArrowRight size={16} />
+        </div>
+
+        <button
+          type="button"
+          className={`gp-stepper__item ${generatorStep === 2 ? 'gp-stepper__item--active' : ''}`}
+          onClick={() => {
+            setGeneratorStep(2);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <div className="gp-stepper__badge">
+            <span>2</span>
+          </div>
+          <div className="gp-stepper__info">
+            <span className="gp-stepper__title">2. Xem File & Triển Khai</span>
+            <span className="gp-stepper__desc">Xem trước DevOps files & 1-Click SSH</span>
+          </div>
+        </button>
       </div>
 
-      {/* ── Step 2: Config Form ── */}
-      <section className="gp-section">
-        <ConfigForm />
-      </section>
+      {/* ══════════════════════════════════════════════════════════════════════
+          BƯỚC 1: QUÉT GITHUB & CHỈNH SỬA CẤU HÌNH
+          ══════════════════════════════════════════════════════════════════════ */}
+      {generatorStep === 1 && (
+        <div className="gp-step-container">
+          {/* ── Step 1.1: GitHub URL Input ── */}
+          <section className="gp-section">
+            <GithubUrlInput />
+          </section>
 
-      {/* ── Step 3: Preview & Download ── */}
-      <section id="preview-section" className="gp-section">
-        <div className="gp-section__header-card">
-          <div className="gp-section__header-left">
-            <div className="gp-section__icon-badge">
-              <Code2 size={16} />
-            </div>
-            <div>
-              <h3 className="gp-section__title">3. Bộ Tệp Tin DevOps Đã Sinh</h3>
-              <p className="gp-section__subtitle">Xem trước, chỉnh sửa trực tiếp và xuất file .zip hoàn chỉnh.</p>
-            </div>
+          {/* ── Divider ── */}
+          <div className="gp-divider">
+            <span>Cấu Hình Chi Tiết Dự Án</span>
           </div>
 
-          <button
-            type="button"
-            className="gp-manual-btn"
-            onClick={() => setShowManualModal(true)}
-          >
-            <HelpCircle size={15} />
-            <span>Hướng dẫn Cấu hình Bắt buộc (Vercel, Secrets, VPS)</span>
-          </button>
-        </div>
-
-        <PreviewPanel />
-      </section>
-
-      {/* ── Step 4: 1-Click Deploy ── */}
-      <section className="gp-section gp-section--deploy">
-        <div className="gp-deploy-header">
-          <div className="gp-deploy-header__left">
-            <div className="gp-deploy-icon-wrap">
-              <Rocket size={18} />
-            </div>
-            <div>
-              <h3 className="gp-deploy-title">4. Triển Khai 1-Click Lên Máy Chủ VPS (SSH Deploy)</h3>
-              <p className="gp-deploy-desc">
-                Tự động kết nối SSH/SFTP, đẩy file cấu hình lên máy chủ và khởi chạy container trong tích tắc.
-              </p>
-            </div>
-          </div>
-
-          <div className="gp-deploy-mode-badge">
-            <Container size={13} />
-            <span>
-              Chế độ: <strong>{config.deployMode === 'registry_pull' ? 'Docker Hub Pull' : 'Remote Build'}</strong>
-            </span>
-          </div>
-        </div>
-
-        {/* VPS Connection Box */}
-        <div className="gp-vps-card">
-          <div className="gp-vps-card__header">
-            <div className="gp-vps-header-left">
-              <Server size={15} />
-              <span>Thông tin Kết nối SSH Máy chủ (VPS Credentials)</span>
-            </div>
-
-            {/* Quick selector */}
-            <div className="gp-vps-select-wrap">
-              <select
-                className="gp-vps-select"
-                value={selectedVpsId}
-                onChange={handleSelectVps}
+          {/* ── Step 1.2: Config Form ── */}
+          <section id="config-section" className="gp-section">
+            <div className="gp-config-topbar">
+              <div>
+                <span className="gp-config-topbar__label">
+                  {activeProjectId ? '✏️ Đang chỉnh sửa cấu hình dự án' : '💾 Lưu cấu hình dự án vào CSDL'}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="gp-save-project-btn"
+                onClick={handleSaveProject}
+                disabled={savingProject}
               >
-                <option value="">⚡ Chọn máy chủ đã lưu ({vpsList.length} VPS)</option>
-                {vpsList.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    🖥️ {v.name} ({v.username}@{v.host}:{v.port})
-                  </option>
-                ))}
-              </select>
+                <BookmarkPlus size={14} />
+                <span>{savingProject ? 'Đang lưu...' : (activeProjectId ? 'Cập Nhật' : 'Lưu Dự Án')}</span>
+              </button>
+            </div>
+            <ConfigForm />
+          </section>
+
+          {/* ── Step 1.3: Next Action Bar ── */}
+          <div className="gp-step-actions">
+            <div className="gp-step-actions__left">
+              <span className="gp-step-actions__hint">
+                💡 Kiểm tra xong thông số? Nhấn nút bên phải để xem toàn bộ file DevOps và tiến hành deploy.
+              </span>
+            </div>
+            <div className="gp-step-actions__right">
+              <button
+                type="button"
+                className="gp-btn-save-secondary"
+                onClick={handleSaveProject}
+                disabled={savingProject}
+              >
+                <BookmarkPlus size={15} />
+                <span>{savingProject ? 'Đang lưu...' : (activeProjectId ? 'Cập Nhật' : 'Lưu Dự Án')}</span>
+              </button>
 
               <button
                 type="button"
-                className="gp-save-vps-btn"
-                title="Lưu cấu hình VPS hiện tại"
-                onClick={handleSaveVps}
+                className="gp-btn-next-primary"
+                onClick={() => {
+                  setGeneratorStep(2);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               >
-                <BookmarkPlus size={13} /> Lưu VPS
-              </button>
-
-              {selectedVpsId && (
-                <button
-                  type="button"
-                  className="gp-save-vps-btn gp-save-vps-btn--danger"
-                  title="Xoá VPS đang chọn khỏi danh sách"
-                  onClick={handleDeleteVps}
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="gp-vps-grid">
-            {/* Host IP */}
-            <div className="gp-input-group">
-              <label>Host / IP Máy chủ VPS *</label>
-              <div className="gp-input-wrapper">
-                <Server size={14} className="gp-input-icon" />
-                <input
-                  type="text"
-                  name="host"
-                  placeholder="Ví dụ: 103.179.188.25"
-                  value={vpsForm.host}
-                  onChange={handleVpsChange}
-                />
-              </div>
-            </div>
-
-            {/* Port */}
-            <div className="gp-input-group">
-              <label>Port SSH</label>
-              <div className="gp-input-wrapper">
-                <Hash size={14} className="gp-input-icon" />
-                <input
-                  type="number"
-                  name="port"
-                  placeholder="22"
-                  value={vpsForm.port}
-                  onChange={handleVpsChange}
-                />
-              </div>
-            </div>
-
-            {/* Username */}
-            <div className="gp-input-group">
-              <label>Username SSH *</label>
-              <div className="gp-input-wrapper">
-                <User size={14} className="gp-input-icon" />
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="root hoặc deploy"
-                  value={vpsForm.username}
-                  onChange={handleVpsChange}
-                />
-              </div>
-            </div>
-
-            {/* Auth Method Selector */}
-            <div className="gp-input-group">
-              <label>Phương thức Xác thực</label>
-              <div className="gp-auth-toggle">
-                <button
-                  type="button"
-                  className={`gp-auth-btn ${authMethod === 'password' ? 'active' : ''}`}
-                  onClick={() => setAuthMethod('password')}
-                >
-                  <Lock size={12} /> Password
-                </button>
-                <button
-                  type="button"
-                  className={`gp-auth-btn ${authMethod === 'key' ? 'active' : ''}`}
-                  onClick={() => setAuthMethod('key')}
-                >
-                  <Key size={12} /> SSH Key
-                </button>
-              </div>
-            </div>
-
-            {/* Password or Key file path input */}
-            {authMethod === 'password' ? (
-              <div className="gp-input-group">
-                <label>Mật khẩu SSH</label>
-                <div className="gp-input-wrapper">
-                  <Lock size={14} className="gp-input-icon" />
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="••••••••••••"
-                    value={vpsForm.password}
-                    onChange={handleVpsChange}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="gp-input-group">
-                <label>Đường dẫn SSH Private Key</label>
-                <div className="gp-input-wrapper">
-                  <Key size={14} className="gp-input-icon" />
-                  <input
-                    type="text"
-                    name="keyFilePath"
-                    placeholder="~/.ssh/id_rsa"
-                    value={vpsForm.keyFilePath}
-                    onChange={handleVpsChange}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Deploy Path */}
-            <div className="gp-input-group">
-              <label>Thư mục Lưu trữ trên VPS</label>
-              <div className="gp-input-wrapper">
-                <Folder size={14} className="gp-input-icon" />
-                <input
-                  type="text"
-                  name="deployPath"
-                  placeholder={`/root/${appName}`}
-                  value={vpsForm.deployPath}
-                  onChange={handleVpsChange}
-                />
-              </div>
-            </div>
-
-            {/* Clean Server Option */}
-            <div className="gp-input-group gp-input-group--full">
-              <label className="gp-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={cleanServerBeforeDeploy}
-                  onChange={(e) => setCleanServerBeforeDeploy(e.target.checked)}
-                />
-                <span>🧹 Dọn sạch server trước khi triển khai (xoá container, image cũ & thư mục deploy)</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Sub-section: Live Script Preview */}
-          <div className="gp-script-preview">
-            <div
-              className="gp-script-preview__header"
-              onClick={() => setShowScriptPreview(!showScriptPreview)}
-            >
-              <div className="gp-script-preview__title">
-                <Terminal size={14} />
-                <span>Xem các câu lệnh Bash SSH sẽ tự động thực thi trên VPS</span>
-              </div>
-              <button type="button" className="gp-script-toggle">
-                {showScriptPreview ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                <span>Tiếp Tục: Xem File & Deploy</span>
+                <ArrowRight size={16} />
               </button>
             </div>
-
-            {showScriptPreview && (
-              <div className="gp-script-box">
-                <div className="gp-script-box__top">
-                  <span>SSH Automated Script</span>
-                  <button type="button" className="gp-copy-script-btn" onClick={handleCopyScript}>
-                    {copiedScript ? <Check size={13} className="text-success" /> : <Copy size={13} />}
-                    <span>{copiedScript ? 'Đã sao chép' : 'Sao chép Script'}</span>
-                  </button>
-                </div>
-                <pre className="gp-script-code">{generatedScript}</pre>
-              </div>
-            )}
           </div>
         </div>
+      )}
 
-        {/* Live Deploy Terminal Logs */}
-        <DeployLogViewer
-          config={config}
-          credentials={{
-            ...vpsForm,
-            keyFilePath: authMethod === 'key' ? vpsForm.keyFilePath : null,
-            cleanServerBeforeDeploy,
-          }}
-        />
-      </section>
+      {/* ══════════════════════════════════════════════════════════════════════
+          BƯỚC 2: XEM TRƯỚC TỆP TIN & TRIỂN KHAI 1-CLICK SSH
+          ══════════════════════════════════════════════════════════════════════ */}
+      {generatorStep === 2 && (
+        <div className="gp-step-container">
+          {/* Top navigation back bar */}
+          <div className="gp-step2-topbar">
+            <button
+              type="button"
+              className="gp-btn-back"
+              onClick={() => {
+                setGeneratorStep(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Quay lại chỉnh sửa cấu hình</span>
+            </button>
+
+            <div className="gp-app-summary-chip">
+              <span className="gp-app-summary-name">📦 {config.appName || 'my-app'}</span>
+              <span className="gp-app-summary-badge">{config.techStack}</span>
+              <span className="gp-app-summary-ver">v{config.techVersion || '21'}</span>
+              <span className="gp-app-summary-port">Port: {config.appPort}</span>
+            </div>
+          </div>
+
+          {/* ── Step 2.1: Preview & Download ── */}
+          <section id="preview-section" className="gp-section">
+            <div className="gp-section__header-card">
+              <div className="gp-section__header-left">
+                <div className="gp-section__icon-badge">
+                  <Code2 size={16} />
+                </div>
+                <div>
+                  <h3 className="gp-section__title">Xem Trước & Xuất File DevOps</h3>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="gp-manual-btn"
+                onClick={() => setShowManualModal(true)}
+              >
+                <HelpCircle size={15} />
+                <span>Hướng dẫn</span>
+              </button>
+            </div>
+
+            <PreviewPanel />
+          </section>
+
+          {/* ── Step 2.2: 1-Click Deploy ── */}
+          <section id="deploy-section" className="gp-section gp-section--deploy">
+            <div className="gp-deploy-header">
+              <div className="gp-deploy-header__left">
+                <div className="gp-deploy-icon-wrap">
+                  <Rocket size={18} />
+                </div>
+                <div>
+                  <h3 className="gp-deploy-title">Triển Khai 1-Click (SSH)</h3>
+                </div>
+              </div>
+
+              <div className="gp-deploy-mode-badge">
+                <Container size={13} />
+                <span>
+                  <strong>{config.deployMode === 'REGISTRY_PULL' || config.deployMode === 'registry_pull' ? 'Docker Hub Pull' : 'Remote Build'}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* VPS Connection Box */}
+            <div className="gp-vps-card">
+              <div className="gp-vps-card__header">
+                <div className="gp-vps-header-left">
+                  <Server size={15} />
+                  <span>Thông Tin Kết Nối VPS</span>
+                </div>
+
+                {/* Quick selector */}
+                <div className="gp-vps-select-wrap">
+                  <select
+                    className="gp-vps-select"
+                    value={selectedVpsId}
+                    onChange={handleSelectVps}
+                  >
+                    <option value="">⚡ Chọn máy chủ đã lưu ({vpsList.length} VPS)</option>
+                    {vpsList.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        🖥️ {v.name} ({v.username}@{v.host}:{v.port})
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className="gp-save-vps-btn"
+                    title="Lưu cấu hình VPS hiện tại"
+                    onClick={handleSaveVps}
+                  >
+                    <BookmarkPlus size={13} /> Lưu VPS
+                  </button>
+
+                  {selectedVpsId && (
+                    <button
+                      type="button"
+                      className="gp-save-vps-btn gp-save-vps-btn--danger"
+                      title="Xoá VPS đang chọn khỏi danh sách"
+                      onClick={handleDeleteVps}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="gp-vps-grid">
+                {/* Host IP */}
+                <div className="gp-input-group">
+                  <label>Host / IP Máy chủ VPS *</label>
+                  <div className="gp-input-wrapper">
+                    <Server size={14} className="gp-input-icon" />
+                    <input
+                      type="text"
+                      name="host"
+                      placeholder="Ví dụ: 103.179.188.25"
+                      value={vpsForm.host}
+                      onChange={handleVpsChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Port */}
+                <div className="gp-input-group">
+                  <label>Port SSH</label>
+                  <div className="gp-input-wrapper">
+                    <Hash size={14} className="gp-input-icon" />
+                    <input
+                      type="number"
+                      name="port"
+                      placeholder="22"
+                      value={vpsForm.port}
+                      onChange={handleVpsChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Username */}
+                <div className="gp-input-group">
+                  <label>Username SSH *</label>
+                  <div className="gp-input-wrapper">
+                    <User size={14} className="gp-input-icon" />
+                    <input
+                      type="text"
+                      name="username"
+                      placeholder="root hoặc deploy"
+                      value={vpsForm.username}
+                      onChange={handleVpsChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Auth Method Selector */}
+                <div className="gp-input-group">
+                  <label>Phương thức Xác thực</label>
+                  <div className="gp-auth-toggle">
+                    <button
+                      type="button"
+                      className={`gp-auth-btn ${authMethod === 'password' ? 'active' : ''}`}
+                      onClick={() => setAuthMethod('password')}
+                    >
+                      <Lock size={12} /> Password
+                    </button>
+                    <button
+                      type="button"
+                      className={`gp-auth-btn ${authMethod === 'key' ? 'active' : ''}`}
+                      onClick={() => setAuthMethod('key')}
+                    >
+                      <Key size={12} /> SSH Key
+                    </button>
+                  </div>
+                </div>
+
+                {/* Password or Key file path input */}
+                {authMethod === 'password' ? (
+                  <div className="gp-input-group">
+                    <label>Mật khẩu SSH</label>
+                    <div className="gp-input-wrapper">
+                      <Lock size={14} className="gp-input-icon" />
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="••••••••••••"
+                        value={vpsForm.password}
+                        onChange={handleVpsChange}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="gp-input-group">
+                    <label>Đường dẫn SSH Private Key</label>
+                    <div className="gp-input-wrapper">
+                      <Key size={14} className="gp-input-icon" />
+                      <input
+                        type="text"
+                        name="keyFilePath"
+                        placeholder="~/.ssh/id_rsa"
+                        value={vpsForm.keyFilePath}
+                        onChange={handleVpsChange}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Deploy Path */}
+                <div className="gp-input-group">
+                  <label>Thư mục Lưu trữ trên VPS</label>
+                  <div className="gp-input-wrapper">
+                    <Folder size={14} className="gp-input-icon" />
+                    <input
+                      type="text"
+                      name="deployPath"
+                      placeholder={`/root/${appName}`}
+                      value={vpsForm.deployPath}
+                      onChange={handleVpsChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Clean Server Option */}
+                <div className="gp-input-group gp-input-group--full">
+                  <label className="gp-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={cleanServerBeforeDeploy}
+                      onChange={(e) => setCleanServerBeforeDeploy(e.target.checked)}
+                    />
+                    <span>🧹 Dọn sạch server trước khi triển khai (xoá container, image cũ & thư mục deploy)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Sub-section: Live Script Preview */}
+              <div className="gp-script-preview">
+                <div
+                  className="gp-script-preview__header"
+                  onClick={() => setShowScriptPreview(!showScriptPreview)}
+                >
+                  <div className="gp-script-preview__title">
+                    <Terminal size={14} />
+                    <span>Xem các câu lệnh Bash SSH sẽ tự động thực thi trên VPS</span>
+                  </div>
+                  <button type="button" className="gp-script-toggle">
+                    {showScriptPreview ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                </div>
+
+                {showScriptPreview && (
+                  <div className="gp-script-box">
+                    <div className="gp-script-box__top">
+                      <span>SSH Automated Script</span>
+                      <button type="button" className="gp-copy-script-btn" onClick={handleCopyScript}>
+                        {copiedScript ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+                        <span>{copiedScript ? 'Đã sao chép' : 'Sao chép Script'}</span>
+                      </button>
+                    </div>
+                    <pre className="gp-script-code">{generatedScript}</pre>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Live Deploy Terminal Logs */}
+            <DeployLogViewer
+              config={config}
+              credentials={{
+                ...vpsForm,
+                keyFilePath: authMethod === 'key' ? vpsForm.keyFilePath : null,
+                cleanServerBeforeDeploy,
+              }}
+              projectId={activeProjectId}
+              serverId={selectedVpsId}
+            />
+          </section>
+        </div>
+      )}
 
       {/* Modal Hướng dẫn Thủ công */}
       <ManualDeployModal

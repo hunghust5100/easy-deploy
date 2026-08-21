@@ -6,6 +6,7 @@ out/
 */out/
 bin/
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 
@@ -36,3 +37,15 @@ Dockerfile
 docker-compose.yml
 nginx.conf
 README-DEPLOY.md
+
+# Local Database Files
+data/
+*/data/
+*.mv.db
+*.trace.db
+
+# Documentation and Reports
+document/
+documents/
+report/
+

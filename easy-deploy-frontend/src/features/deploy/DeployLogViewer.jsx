@@ -22,6 +22,8 @@ import {
   Minimize2,
   Trash2,
 } from 'lucide-react';
+import { getWebSocketUrl } from '../../utils/wsHelper';
+import { useAuth } from '../../context/AuthContext';
 import '@xterm/xterm/css/xterm.css';
 import './DeployLogViewer.css';
 
@@ -33,7 +35,8 @@ const DEPLOY_STEPS = [
   { id: 5, name: 'Docker Compose', desc: 'Build Image & Start Containers', icon: Layers },
 ];
 
-function DeployLogViewer({ config, credentials, onFinished }) {
+function DeployLogViewer({ config, credentials, projectId, serverId, onFinished }) {
+  const { currentUser } = useAuth();
   const terminalRef = useRef(null);
   const termInstanceRef = useRef(null);
   const fitAddonRef = useRef(null);
@@ -64,7 +67,10 @@ function DeployLogViewer({ config, credentials, onFinished }) {
     setTimeout(() => setCopiedUrl(null), 2000);
   };
 
+  const currentStepRef = useRef(0);
+
   const updateStepProgress = (stepNumber) => {
+    currentStepRef.current = stepNumber;
     setCurrentStep(stepNumber);
     setStepStatuses((prev) => {
       const next = { ...prev };
@@ -79,8 +85,13 @@ function DeployLogViewer({ config, credentials, onFinished }) {
   const start1ClickDeploy = () => {
     if (deploying) return;
 
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.close();
+    }
+
     setDeploying(true);
     setStatus('running');
+    currentStepRef.current = 1;
     setCurrentStep(1);
     setStepStatuses({
       1: 'running',
@@ -136,8 +147,7 @@ function DeployLogViewer({ config, credentials, onFinished }) {
     const term = termInstanceRef.current;
 
     // 2. Mở kết nối WebSocket tới /ws/deploy-logs
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8088/ws/deploy-logs`;
+    const wsUrl = getWebSocketUrl('/ws/deploy-logs');
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -146,6 +156,9 @@ function DeployLogViewer({ config, credentials, onFinished }) {
         JSON.stringify({
           config,
           credentials,
+          projectId: projectId || undefined,
+          serverId: serverId || undefined,
+          userId: currentUser?.id || undefined,
         })
       );
     };
@@ -171,6 +184,7 @@ function DeployLogViewer({ config, credentials, onFinished }) {
       if (msg.includes('[EZ_STATUS:SUCCESS]')) {
         setStatus('success');
         setDeploying(false);
+        currentStepRef.current = 5;
         setCurrentStep(5);
         setStepStatuses({
           1: 'success',
@@ -183,26 +197,29 @@ function DeployLogViewer({ config, credentials, onFinished }) {
       } else if (msg.includes('[EZ_STATUS:ERROR]')) {
         setStatus('error');
         setDeploying(false);
+        const failedStep = currentStepRef.current || 1;
         setStepStatuses((prev) => ({
           ...prev,
-          [currentStep || 5]: 'error',
+          [failedStep]: 'error',
         }));
         onFinished?.('error');
       }
     };
 
     ws.onerror = () => {
-      term?.write('\r\n\u001b[31m[WebSocket Error] Không thể kết nối tới máy chủ EasyDeploy backend (Port 8088).\u001b[0m\r\n');
+      term?.write('\r\n\u001b[31m[WebSocket Error] Không thể kết nối tới máy chủ EasyDeploy backend.\u001b[0m\r\n');
       setDeploying(false);
       setStatus('error');
+      const failedStep = currentStepRef.current || 1;
       setStepStatuses((prev) => ({
         ...prev,
-        [currentStep || 1]: 'error',
+        [failedStep]: 'error',
       }));
     };
 
     ws.onclose = () => {
       setDeploying(false);
+      setStatus((prev) => (prev === 'running' ? 'error' : prev));
     };
 
     const handleResize = () => fitAddonRef.current?.fit();
