@@ -98,13 +98,13 @@ public class FileContentParser {
         if (mSb.find()) {
             int major = Integer.parseInt(mSb.group(1));
             if (major >= 3) {
-                return "17"; // Spring Boot 3 requires Java 17 minimum
+                return "21"; // Spring Boot 3 supports Java 17 and 21, default to 21
             } else if (major == 2) {
                 return "11";
             }
         }
 
-        return "17"; // Default fallback
+        return "21"; // Default fallback
     }
 
     public String normalizeJavaVersion(String raw) {

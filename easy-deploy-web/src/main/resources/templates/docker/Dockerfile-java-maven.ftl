@@ -14,7 +14,7 @@
   <#assign javaVer = "21">
 </#if>
 # 1. Base Image Builder (JDK + Maven)
-FROM maven:3.9.6-eclipse-temurin-${javaVer}-alpine AS builder
+FROM maven:3.9.9-eclipse-temurin-${javaVer}-alpine AS builder
 
 # 2. WORKDIR - Tạo và di chuyển vào thư mục làm việc
 WORKDIR /app

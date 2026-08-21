@@ -26,7 +26,7 @@ public class FileContentParserTest {
         assertEquals("11", parser.parseJavaVersion(pom5));
 
         String pom6 = "<project><parent><artifactId>spring-boot-starter-parent</artifactId><version>3.2.0</version></parent></project>";
-        assertEquals("17", parser.parseJavaVersion(pom6));
+        assertEquals("21", parser.parseJavaVersion(pom6));
     }
 
     @Test

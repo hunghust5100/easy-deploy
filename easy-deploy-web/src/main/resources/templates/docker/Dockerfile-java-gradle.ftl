@@ -14,7 +14,7 @@
   <#assign javaVer = "21">
 </#if>
 # 1. Base Image Builder (JDK + Gradle Alpine)
-FROM gradle:8.6-jdk${javaVer}-alpine AS builder
+FROM gradle:8.14-jdk${javaVer}-alpine AS builder
 
 # 2. WORKDIR
 WORKDIR /app
