@@ -23,18 +23,13 @@ WORKDIR /app
 COPY . .
 
 # 4. RUN biên dịch đóng gói JAR
-RUN if [ -f pom.xml ]; then \
-      mvn clean package -DskipTests -B; \
+RUN TARGET_MODULE="${config.appName!""}" && \
+    if [ -n "$TARGET_MODULE" ] && [ -d "$TARGET_MODULE" ]; then \
+        echo ">>> Monorepo detected. Building module: $TARGET_MODULE" && \
+        mvn clean package -pl "$TARGET_MODULE" -am -DskipTests -B; \
     else \
-      SUB_DIR=$(find . -maxdepth 2 -name "pom.xml" | head -1 | xargs -I{} dirname {} 2>/dev/null); \
-      if [ -n "$SUB_DIR" ] && [ "$SUB_DIR" != "." ]; then \
-        echo ">>> [EasyDeploy] Found standalone Maven project in $SUB_DIR. CD into it..." && \
-        cd "$SUB_DIR" && \
+        echo ">>> Standalone Maven detected. Building root project..." && \
         mvn clean package -DskipTests -B; \
-      else \
-        echo ">>> [EasyDeploy] pom.xml not found. Trying to run mvn anyway..." && \
-        mvn clean package -DskipTests -B; \
-      fi; \
     fi
 
 # 5. Tự động trích xuất file JAR thực thi (loại trừ plain/sources/original JAR) vào /app/app.jar

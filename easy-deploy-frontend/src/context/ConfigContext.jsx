@@ -76,24 +76,7 @@ export function ConfigProvider({ children }) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const [config, setConfig] = useState(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_CONFIG_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const stack = parsed.techStack || DEFAULT_CONFIG.techStack;
-        const safeVer = sanitizeTechVersion(stack, parsed.techVersion || DEFAULT_CONFIG.techVersion);
-        const safeServices = (parsed.services || []).map((s) => ({
-          ...s,
-          techVersion: sanitizeTechVersion(s.techStack, s.techVersion),
-        }));
-        return { ...DEFAULT_CONFIG, ...parsed, techVersion: safeVer, services: safeServices };
-      }
-      return { ...DEFAULT_CONFIG };
-    } catch {
-      return { ...DEFAULT_CONFIG };
-    }
-  });
+  const [config, setConfig] = useState({ ...DEFAULT_CONFIG });
 
   const [savedProjects, setSavedProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(false);

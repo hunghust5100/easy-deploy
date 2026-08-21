@@ -29,34 +29,14 @@ RUN if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then gradle wrapper 2>/dev/nu
 # Tự động phát hiện Multi-module hoặc Single-module:
 # - Ưu tiên gradlew wrapper theo đúng phiên bản của repo, fallback về gradle hệ thống nếu cần
 # - Tự động scan tìm module Spring Boot trong Multi-module project
-RUN if [ -f gradlew ] && [ -f gradle/wrapper/gradle-wrapper.jar ]; then BUILD_CMD="./gradlew"; else BUILD_CMD="gradle"; fi && \
-    if [ -f settings.gradle ] || [ -f settings.gradle.kts ]; then \
-      TARGET_MODULE="${config.appName}"; \
-      if [ -d "$TARGET_MODULE" ] && ( [ -f "$TARGET_MODULE/build.gradle" ] || [ -f "$TARGET_MODULE/build.gradle.kts" ] ); then \
-        echo ">>> [EasyDeploy] Monorepo Gradle. Tien hanh build :$TARGET_MODULE:bootJar..." && \
+RUN if [ -f gradlew ]; then BUILD_CMD="./gradlew"; else BUILD_CMD="gradle"; fi && \
+    TARGET_MODULE="${config.appName!""}" && \
+    if [ -n "$TARGET_MODULE" ] && [ -d "$TARGET_MODULE" ]; then \
+        echo ">>> Monorepo detected. Building module: $TARGET_MODULE" && \
         $BUILD_CMD ":$TARGET_MODULE:bootJar" --no-daemon -x test || $BUILD_CMD ":$TARGET_MODULE:build" --no-daemon -x test; \
-      else \
-        BOOT_MODULE=$(grep -rl "org.springframework.boot" */build.gradle* 2>/dev/null | head -1 | xargs -I{} dirname {} 2>/dev/null) && \
-        if [ -n "$BOOT_MODULE" ]; then \
-          echo ">>> [EasyDeploy] Multi-module Gradle phat hien. Tien hanh build :$BOOT_MODULE:bootJar..." && \
-          $BUILD_CMD ":$BOOT_MODULE:bootJar" --no-daemon -x test; \
-        else \
-          echo ">>> [EasyDeploy] Single/Standard Gradle. Tien hanh build bootJar..." && \
-          $BUILD_CMD bootJar --no-daemon -x test || $BUILD_CMD build -x test; \
-        fi; \
-      fi; \
     else \
-      SUB_DIR=$(find . -maxdepth 2 -name "settings.gradle*" | head -1 | xargs -I{} dirname {} 2>/dev/null); \
-      if [ -n "$SUB_DIR" ] && [ "$SUB_DIR" != "." ]; then \
-        echo ">>> [EasyDeploy] Found standalone Gradle project in $SUB_DIR. CD into it..." && \
-        cd "$SUB_DIR" && \
-        if [ -f gradlew ]; then SUB_BUILD_CMD="./gradlew"; else SUB_BUILD_CMD="gradle"; fi && \
-        chmod +x ./gradlew 2>/dev/null || true && \
-        $SUB_BUILD_CMD bootJar --no-daemon -x test || $SUB_BUILD_CMD build -x test; \
-      else \
-        echo ">>> [EasyDeploy] Single Gradle. Tien hanh build bootJar..." && \
-        $BUILD_CMD bootJar --no-daemon -x test || $BUILD_CMD build -x test; \
-      fi; \
+        echo ">>> Standalone Gradle detected. Building root project..." && \
+        $BUILD_CMD bootJar --no-daemon -x test || $BUILD_CMD build --no-daemon -x test; \
     fi
 
 # 5. Tự động trích xuất file JAR thực thi (loại trừ plain/sources JAR) vào vị trí chuẩn /app/app.jar
