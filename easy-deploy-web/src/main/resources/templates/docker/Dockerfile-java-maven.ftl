@@ -46,12 +46,13 @@ RUN find . -path "*/target/*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar
 FROM eclipse-temurin:${javaVer}-jre-alpine
 WORKDIR /app
 
-# Tối ưu Bảo mật: Tạo và chuyển sang User thường (Non-root)
+# Tối ưu Bảo mật: Tạo User thường (Non-root)
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
 
 # Copy file jar đã build chuẩn từ builder
-COPY --from=builder /app/app.jar app.jar
+COPY --from=builder --chown=appuser:appgroup /app/app.jar app.jar
+
+USER appuser
 
 # 6. EXPOSE cổng ứng dụng
 EXPOSE ${config.appPort?c}

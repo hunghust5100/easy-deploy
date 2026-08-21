@@ -76,12 +76,13 @@ RUN if [ -d "${config.appName}/build/libs" ]; then \
 FROM eclipse-temurin:${javaVer}-jre-alpine
 WORKDIR /app
 
-# Tối ưu Bảo mật: Tạo và chuyển sang User thường (Non-root)
+# Tối ưu Bảo mật: Tạo User thường (Non-root)
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
 
 # Copy file jar đã được trích xuất từ stage builder
-COPY --from=builder /app/app.jar app.jar
+COPY --from=builder --chown=appuser:appgroup /app/app.jar app.jar
+
+USER appuser
 
 # 6. EXPOSE cổng ứng dụng
 EXPOSE ${config.appPort?c}
