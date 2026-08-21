@@ -34,6 +34,7 @@ FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 
 RUN rm -rf ./*
+RUN sed -i "s/listen       80;/listen       ${config.appPort?c};/g" /etc/nginx/conf.d/default.conf
 
 COPY --from=builder /app/_static/ ./
 

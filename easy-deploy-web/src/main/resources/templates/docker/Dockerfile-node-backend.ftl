@@ -51,6 +51,8 @@ COPY --from=builder /app ./
 # Tối ưu Bảo mật: Chạy bằng User 'node' có sẵn trong Alpine Image
 USER node
 
+ENV PORT=${config.appPort?c}
+
 # 6. EXPOSE
 EXPOSE ${config.appPort?c}
 
